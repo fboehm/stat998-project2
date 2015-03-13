@@ -1,0 +1,37 @@
+---
+title: "Stat998 - Project 2"
+author: "Fred Boehm"
+date: "March 12, 2015"
+output:
+  html_document:
+    fig_caption:
+    - yes
+  pdf_document:
+    fig_caption:
+    - yes
+---
+
+```{r "setup", echo=FALSE}
+rm(list=ls())
+
+library(knitr)
+opts_chunk$set(cache=FALSE, echo=TRUE, results= 'asis', message = TRUE, warning=TRUE, tidy=TRUE, highlight=TRUE, fig.show='asis')
+```
+
+
+
+
+```{r "readdat"}
+library(tidyr)
+library(dplyr)
+library(stringr)
+library(lubridate)
+library(ggplot2)
+wls<- tbl_df(read.csv("WLS2.csv"))
+```
+
+```{r}
+
+```
+
+
