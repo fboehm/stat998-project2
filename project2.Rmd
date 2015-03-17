@@ -2,6 +2,7 @@
 title: "Stat998 - Project 2"
 author: "Fred Boehm"
 date: "March 12, 2015"
+bibliography: stat998_2.bib
 output:
   html_document:
     fig_caption:
@@ -30,8 +31,33 @@ library(ggplot2)
 wls<- tbl_df(read.csv("WLS2.csv"))
 ```
 
-```{r}
+```{r HA2011responders}
+wls_ha2011responders <- wls[!is.na(wls$HA2011),]
 
 ```
+
+
+
+## Using Framingham study
+
+@d2008general use the following variables in their risk calculator (where risk is ten-year risk of cardiovascular disease event):
+
+- age  
+- hdl cholesterol  
+- total cholesterol  
+- Systolic Blood pressure (treated or not treated)  
+- smoking  
+- diabetes mellitus  
+
+We need to identify these variables among the many variables in the Wisconsin Longitudinal Survey. 
+
+One possible approach is to identify values of these variables at 2004, when many subjects were 65 years old (if they graduated in 1957), then ask which subjects had a 'heart attack' between 2004 and 2011. While it's only a seven-year interval, my hunch is that the established cardiovascular disease risk factors, such as those from the Framingham study [@d2008general], will be important in this study.
+
+
+Q: Do we have survey questions that address the presence of other (non-MI) cardiovascular events? For instance, do we distinguish stroke from MI (myocardial infarction)? 
+
+## References
+
+
 
 
