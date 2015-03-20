@@ -1,0 +1,12 @@
+---
+title: Identifying myocardial infarction risk factors in the Wisconsin Longitudinal
+  Survey
+author: "Fred Boehm, Statistics 998"
+date: "March 19, 2015"
+output: html_document
+---
+
+## Abstract
+
+## Introduction
+

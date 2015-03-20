@@ -87,6 +87,10 @@ Version: 0.3.0.2
 Hash: e99be567bac13f0d6335cddfb801da24
 Requires: BH, DBI, R6, Rcpp, assertthat, lazyeval, magrittr
 
+Package: e1071
+Source: CRAN
+Version: 1.6-4
+
 Package: evaluate
 Source: CRAN
 Version: 0.5.5
@@ -98,11 +102,19 @@ Source: CRAN
 Version: 1.0
 Hash: a90c211d7df7e61a72b8ab6c99c2e848
 
+Package: gbm
+Source: CRAN
+Version: 2.1.1
+
 Package: ggplot2
 Source: CRAN
 Version: 1.0.0
 Hash: c8bff66238347472f08b6a35608539ff
 Requires: digest, gtable, plyr, proto, reshape2, scales
+
+Package: glmnet
+Source: CRAN
+Version: 1.9-8
 
 Package: gtable
 Source: CRAN
@@ -197,6 +209,10 @@ Source: CRAN
 Version: 0.3-10
 Hash: 668a9e87cedbdc5f56c396edf1bd2648
 
+Package: randomForest
+Source: CRAN
+Version: 4.6-10
+
 Package: reshape2
 Source: CRAN
 Version: 1.4.1
@@ -255,6 +271,10 @@ Source: CRAN
 Version: 0.2.0
 Hash: 3b379415e9e88d4f559b380819893304
 Requires: dplyr, lazyeval, reshape2, stringi
+
+Package: tree
+Source: CRAN
+Version: 1.0-35
 
 Package: whisker
 Source: CRAN
