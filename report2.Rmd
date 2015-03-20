@@ -2,11 +2,61 @@
 title: Identifying myocardial infarction risk factors in the Wisconsin Longitudinal
   Survey
 author: "Fred Boehm, Statistics 998"
-date: "March 19, 2015"
-output: html_document
+date: "March 26, 2015"
+output: 
+  pdf_document:
+    fig_caption: yes
+    keep_tex: true
+    includes:
+      in_header: head.tex
+fontsize: 11pt
+geometry: margin=2cm
+bibliography: stat998_2.bib
 ---
+
+\listoftodos
+
+```{r "setup", echo=FALSE}
+rm(list=ls())
+
+library(knitr)
+opts_chunk$set(cache=FALSE, echo=FALSE, results= 'asis', message = FALSE, warning=FALSE, tidy=TRUE, highlight=TRUE, fig.show='asis')
+```
+
+```{r "readdat"}
+library(tidyr)
+library(dplyr)
+library(stringr)
+library(lubridate)
+library(ggplot2)
+library(gbm)
+wls<- tbl_df(read.csv("WLS2.csv"))
+```
+
+
+
 
 ## Abstract
 
+
+
+
 ## Introduction
+
+Coronary artery disease (CAD) is a leading cause of death in the United States and much of North America and Europe. More than ___ \todo[inline]{find a number!} Americans died in 2013 from CAD. One manifestation of CAD is a myocardial infarction (MI), which is also called a "heart attack". A MI results from a clot in a coronary artery that diminishes blood flow to the heart muscle, or myocardium. If blood flow disruption persists for a sufficiently long time, the muscle may die, or infarct. The irreparable dead heart muscle diminishes the overall ability of the heart to pump blood. Severe MIs may lead to a patient's death. 
+
+Epidemiologists have identified modifiable and non-modifiable risk factors that contribute to CAD risk. Smoking is among the strongest modifiable risk factors, and is thought to elevate CAD risk by ____ \todo[inline, color = red]{What is mechanism for smoking causing CAD?}. Diabetes mellitus, hypertension (systolic or diastolic) are typically considered non-modifiable risk factors, although their contribution to CAD risk may be reduced in patients who undertake dramatic lifestyle interventions, such as exercise programs and diet with weight loss. Additional risk factors include \todo[inline, color = pink]{what are other known risk factors?}
+
+Our collaborators at the Wisconsin Longitudinal Survey (WLS) have undertaken a study on a subset of WLS participants with the goal of identifying CAD risk factors in the WLS study population. The ultimate goal of this project is to develop an intervention program to reduce CAD morbidity and mortality in Wisconsin. The investigators would like to extend such an intervention program to Wisconsin residents who are not WLS subjects. Our goal in this report is to identify risk factors for MI among WLS participants. 
+
+## Study design
+
+WLS originated as a longitudinal study of subjects who graduated from Wisconsin high schools in 1957. In subsequent years, investigators requested that a single sibling of each subject, when available, enroll in the study.
+
+
+
+
+
+
+
 

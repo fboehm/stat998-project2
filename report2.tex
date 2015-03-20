@@ -1,0 +1,123 @@
+\documentclass[11pt,]{article}
+\usepackage{lmodern}
+\usepackage{amssymb,amsmath}
+\usepackage{ifxetex,ifluatex}
+\usepackage{fixltx2e} % provides \textsubscript
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+\else % if luatex or xelatex
+  \ifxetex
+    \usepackage{mathspec}
+    \usepackage{xltxtra,xunicode}
+  \else
+    \usepackage{fontspec}
+  \fi
+  \defaultfontfeatures{Mapping=tex-text,Scale=MatchLowercase}
+  \newcommand{\euro}{€}
+\fi
+% use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+% use microtype if available
+\IfFileExists{microtype.sty}{%
+\usepackage{microtype}
+\UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\usepackage[margin=2cm]{geometry}
+\ifxetex
+  \usepackage[setpagesize=false, % page size defined by xetex
+              unicode=false, % unicode breaks when used with xetex
+              xetex]{hyperref}
+\else
+  \usepackage[unicode=true]{hyperref}
+\fi
+\hypersetup{breaklinks=true,
+            bookmarks=true,
+            pdfauthor={Fred Boehm, Statistics 998},
+            pdftitle={Identifying myocardial infarction risk factors in the Wisconsin Longitudinal Survey},
+            colorlinks=true,
+            citecolor=blue,
+            urlcolor=blue,
+            linkcolor=magenta,
+            pdfborder={0 0 0}}
+\urlstyle{same}  % don't use monospace font for urls
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt plus 2pt minus 1pt}
+\setlength{\emergencystretch}{3em}  % prevent overfull lines
+\setcounter{secnumdepth}{0}
+
+%%% Use protect on footnotes to avoid problems with footnotes in titles
+\let\rmarkdownfootnote\footnote%
+\def\footnote{\protect\rmarkdownfootnote}
+
+%%% Change title format to be more compact
+\usepackage{titling}
+\setlength{\droptitle}{-2em}
+  \title{Identifying myocardial infarction risk factors in the Wisconsin
+Longitudinal Survey}
+  \pretitle{\vspace{\droptitle}\centering\huge}
+  \posttitle{\par}
+  \author{Fred Boehm, Statistics 998}
+  \preauthor{\centering\large\emph}
+  \postauthor{\par}
+  \predate{\centering\large\emph}
+  \postdate{\par}
+  \date{March 26, 2015}
+
+
+\usepackage[hypcap]{caption}
+\usepackage[colorinlistoftodos=true]{todonotes}
+\usepackage{dcolumn}
+\usepackage{booktabs}
+
+
+\begin{document}
+
+\maketitle
+
+
+\listoftodos
+
+\subsection{Abstract}\label{abstract}
+
+\subsection{Introduction}\label{introduction}
+
+Coronary artery disease (CAD) is a leading cause of death in the United
+States and much of North America and Europe. More than \_\_\_
+\todo[inline]{find a number!} Americans died in 2013 from CAD. One
+manifestation of CAD is a myocardial infarction (MI), which is also
+called a ``heart attack''. A MI results from a clot in a coronary artery
+that diminishes blood flow to the heart muscle, or myocardium. If blood
+flow disruption persists for a sufficiently long time, the muscle may
+die, or infarct. The irreparable dead heart muscle diminishes the
+overall ability of the heart to pump blood. Severe MIs may lead to a
+patient's death.
+
+Epidemiologists have identified modifiable and non-modifiable risk
+factors that contribute to CAD risk. Smoking is among the strongest
+modifiable risk factors, and is thought to elevate CAD risk by \_\_\_\_
+\todo[inline, color = red]{What is mechanism for smoking causing CAD?}.
+Diabetes mellitus, hypertension (systolic or diastolic) are typically
+considered non-modifiable risk factors, although their contribution to
+CAD risk may be reduced in patients who undertake dramatic lifestyle
+interventions, such as exercise programs and diet with weight loss.
+Additional risk factors include
+\todo[inline, color = pink]{what are other known risk factors?}
+
+Our collaborators at the Wisconsin Longitudinal Survey (WLS) have
+undertaken a study on a subset of WLS participants with the goal of
+identifying CAD risk factors in the WLS study population. The ultimate
+goal of this project is to develop an intervention program to reduce CAD
+morbidity and mortality in Wisconsin. The investigators would like to
+extend such an intervention program to Wisconsin residents who are not
+WLS subjects. Our goal in this report is to identify risk factors for MI
+among WLS participants.
+
+\subsection{Study design}\label{study-design}
+
+WLS originated as a longitudinal study of subjects who graduated from
+Wisconsin high schools in 1957. In subsequent years, investigators
+requested that a single sibling of each subject, when available, enroll
+in the study.
+
+\end{document}
