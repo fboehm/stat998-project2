@@ -43,15 +43,27 @@ wls<- tbl_df(read.csv("WLS2.csv"))
 
 ## Introduction
 
-Coronary artery disease (CAD) is a leading cause of death in the United States and much of North America and Europe. More than ___ \todo[inline]{find a number!} Americans died in 2013 from CAD. One manifestation of CAD is a myocardial infarction (MI), which is also called a "heart attack". A MI results from a clot in a coronary artery that diminishes blood flow to the heart muscle, or myocardium. If blood flow disruption persists for a sufficiently long time, the muscle may die, or infarct. The irreparable dead heart muscle diminishes the overall ability of the heart to pump blood. Severe MIs may lead to a patient's death. 
+Coronary artery disease (CAD) is a leading cause of death in the United States and much of North America and Europe. In 2011, one American died of CAD every 40 seconds, on average, and 155,000 of those deaths were people aged less than 65 years [@mozaffarian2015executive]. One manifestation of CAD is a myocardial infarction (MI), which is also called a "heart attack". A MI results from a clot in a coronary artery that diminishes blood flow to the heart muscle, or myocardium. If blood flow disruption persists for a sufficiently long time, the muscle may die, or infarct. The irreparable dead heart muscle diminishes the overall ability of the heart to pump blood. Severe MIs may lead to a patient's death. 
 
-Epidemiologists have identified modifiable and non-modifiable risk factors that contribute to CAD risk. Smoking is among the strongest modifiable risk factors, and is thought to elevate CAD risk by ____ \todo[inline, color = red]{What is mechanism for smoking causing CAD?}. Diabetes mellitus, hypertension (systolic or diastolic) are typically considered non-modifiable risk factors, although their contribution to CAD risk may be reduced in patients who undertake dramatic lifestyle interventions, such as exercise programs and diet with weight loss. Additional risk factors include \todo[inline, color = pink]{what are other known risk factors?}
+Epidemiologists have identified modifiable and non-modifiable risk factors that contribute to CAD risk. Smoking is among the strongest modifiable risk factors, and is thought to elevate CAD risk by triggering elevations in inflammatory molecules in the bloodstream.  ____ \todo[inline, color = red]{What is mechanism for smoking causing CAD?}. Diabetes mellitus, hypertension (systolic or diastolic) are typically considered non-modifiable risk factors, although their contribution to CAD risk may be reduced in patients who undertake dramatic lifestyle interventions, such as exercise programs and diet with weight loss. Additional, non-modifiable risk factors include a family history of CAD and presence of certain genetic variants \todo[inline, color = pink]{what are other known risk factors?}.
 
-Our collaborators at the Wisconsin Longitudinal Survey (WLS) have undertaken a study on a subset of WLS participants with the goal of identifying CAD risk factors in the WLS study population. The ultimate goal of this project is to develop an intervention program to reduce CAD morbidity and mortality in Wisconsin. The investigators would like to extend such an intervention program to Wisconsin residents who are not WLS subjects. Our goal in this report is to identify risk factors for MI among WLS participants. 
+Our collaborators at the Wisconsin Longitudinal Study (WLS) have undertaken an investigation on a subset of WLS participants with the goal of identifying CAD risk factors in the WLS study population. The ultimate goal of this project is to develop an intervention program to reduce CAD morbidity and mortality in Wisconsin. The investigators would like to extend such an intervention program to Wisconsin residents who are not WLS subjects. Our goal in this report is to identify risk factors for MI among WLS participants. 
 
 ## Study design
 
-WLS originated as a longitudinal study of subjects who graduated from Wisconsin high schools in 1957. In subsequent years, investigators requested that a single sibling of each subject, when available, enroll in the study.
+The Wisconsin Longitudinal Study (WLS) is a long-term study of a random sample of 10,317 men and women who graduated from Wisconsin high schools in 1957. According to the WLS website "WLS provides an opportunity to study the life course, intergenerational transfers and relationships, family functioning, physical and mental health and well-being, and morbidity and mortality from late adolescence through 2011."[@wls]
+
+\todo[inline, color = blue]{need more info on WLS}
+
+Our collaborators collected data from the original respondents or their parents in 1957, 1964, 1975, 1992, 2004, and 2011; from a selected sibling in 1977, 1994, 2005, and 2011; from the spouse of the original respondent in 2004; from the spouse of the selected sibling in 2006; and from widow(er)s of the graduates and siblings in 2006.
+
+
+## Data description
+
+
+
+
+## References
 
 
 
