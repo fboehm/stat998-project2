@@ -33,7 +33,9 @@ wls<- tbl_df(read.csv("WLS2.csv"))
 
 ```{r HA2011responders}
 wls_ha2011responders <- wls[!is.na(wls$HA2011),]
-
+# find those with ha2004 & doc2004 = no & either yes or no for the 2011 ha questions
+wls_nona<- wls[!is.na(select(wls, HA2011)) & !is.na(select(wls, HA2004)),]
+wls_ha2004_no <- wls_nona[select(wls_nona, HA2004)=="No",]
 ```
 
 

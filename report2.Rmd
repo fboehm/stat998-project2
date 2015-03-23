@@ -33,6 +33,11 @@ library(gbm)
 wls<- tbl_df(read.csv("WLS2.csv"))
 ```
 
+```{r HA2011responders}
+wls_ha2011responders <- wls[!is.na(wls$HA2011),]
+
+```
+
 
 
 
@@ -45,7 +50,7 @@ wls<- tbl_df(read.csv("WLS2.csv"))
 
 Coronary artery disease (CAD) is a leading cause of death in the United States and much of North America and Europe. In 2011, one American died of CAD every 40 seconds, on average, and 155,000 of those deaths were people aged less than 65 years [@mozaffarian2015executive]. One manifestation of CAD is a myocardial infarction (MI), which is also called a "heart attack". A MI results from a clot in a coronary artery that diminishes blood flow to the heart muscle, or myocardium. If blood flow disruption persists for a sufficiently long time, the muscle may die, or infarct. The irreparable dead heart muscle diminishes the overall ability of the heart to pump blood. Severe MIs may lead to a patient's death. 
 
-Epidemiologists have identified modifiable and non-modifiable risk factors that contribute to CAD risk. Smoking is among the strongest modifiable risk factors, and is thought to elevate CAD risk by triggering elevations in inflammatory molecules in the bloodstream.  ____ \todo[inline, color = red]{What is mechanism for smoking causing CAD?}. Diabetes mellitus, hypertension (systolic or diastolic) are typically considered non-modifiable risk factors, although their contribution to CAD risk may be reduced in patients who undertake dramatic lifestyle interventions, such as exercise programs and diet with weight loss. Additional, non-modifiable risk factors include a family history of CAD and presence of certain genetic variants \todo[inline, color = pink]{what are other known risk factors?}.
+Epidemiologists have identified modifiable and non-modifiable risk factors that contribute to CAD risk. Smoking is among the strongest modifiable risk factors, and is thought to elevate CAD risk by triggering elevations in inflammatory molecules in the bloodstream.  ____ \todo[inline, color = red]{What is mechanism for smoking causing CAD?}. Diabetes mellitus and hypertension (systolic or diastolic) are typically considered non-modifiable risk factors, although their contribution to CAD risk may be reduced in patients who undertake dramatic lifestyle interventions, such as exercise programs and diet with weight loss. Non-modifiable risk factors include age, a family history of CAD and presence of certain genetic variants \todo[inline, color = pink]{what are other known risk factors?}. 
 
 Our collaborators at the Wisconsin Longitudinal Study (WLS) have undertaken an investigation on a subset of WLS participants with the goal of identifying CAD risk factors in the WLS study population. The ultimate goal of this project is to develop an intervention program to reduce CAD morbidity and mortality in Wisconsin. The investigators would like to extend such an intervention program to Wisconsin residents who are not WLS subjects. Our goal in this report is to identify risk factors for MI among WLS participants. 
 
@@ -53,19 +58,32 @@ Our collaborators at the Wisconsin Longitudinal Study (WLS) have undertaken an i
 
 The Wisconsin Longitudinal Study (WLS) is a long-term study of a random sample of 10,317 men and women who graduated from Wisconsin high schools in 1957. According to the WLS website "WLS provides an opportunity to study the life course, intergenerational transfers and relationships, family functioning, physical and mental health and well-being, and morbidity and mortality from late adolescence through 2011."[@wls]
 
-\todo[inline, color = blue]{need more info on WLS}
+\todo[inline, color = blue]{need more info on WLS?}
 
-Our collaborators collected data from the original respondents or their parents in 1957, 1964, 1975, 1992, 2004, and 2011; from a selected sibling in 1977, 1994, 2005, and 2011; from the spouse of the original respondent in 2004; from the spouse of the selected sibling in 2006; and from widow(er)s of the graduates and siblings in 2006.
+Our collaborators collected data from the original respondents or their parents in 1957, 1964, 1975, 1992, 2004, and 2011; from a selected sibling in 1977, 1994, 2005, and 2011; from the spouse of the original respondent in 2004; from the spouse of the selected sibling in 2006; and from widow(er)s of the graduates and siblings in 2006. 
 
 
 ## Data description
+
+Our collaborators shared with us a data set that contains records for `r nrow(wls)` individuals (including original subjects and siblings) with `r ncol(wls)` variables per subject. `r nrow(wls_ha2011responders)` subjects responded (with yes or no) to the 2011 question of whether they had ever had a heart attack. 
+
+## Exploratory data analyses
+
+
+
+
+## Statistical modeling
+
+We used statistical modeling to try to identify covariates that associated with six distinct outcomes: 1) HA2004, 2) HA2011, 3) DOC2004, 4) DOC2011, 5) new self-reported heart attacks (from 2004 to 2011) and 6) new heart attack per doctor's report (from 2004 to 2011). For a subject to qualify as a "new" self-reported heart attack, they must have responded "No" in 2004 and "Yes" in 2011. Analogous definition applies for "new" doctor-reported heart attack.
+
+We found that HA2004 had `r sum(!is.na(wls$HA2004), na.rm=TRUE)` non-missing responders (with `r sum(wls$HA2004=="Yes", na.rm=TRUE)` responding "Yes" and `r sum(wls$HA2004=="No", na.rm=TRUE)` responding "No"). Further response counts are provided in 
 
 
 
 
 ## References
 
-
+@leek2015
 
 
 
