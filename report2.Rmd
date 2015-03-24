@@ -70,7 +70,7 @@ Our collaborators shared with us a data set that contains records for `r nrow(wl
 ## Exploratory data analyses
 
 
-
+\todo[inline, color = green]{what to explore for categorical data? Only the proportion in each category????}
 
 ## Statistical modeling
 
@@ -105,13 +105,13 @@ Treated for high blood pressure & None\\
 
 ```{r logistic_framingham}
 
-glm_wrap<- function(formula, data= wls, family="binomial", outcome_vector= wls$HAC2011
+glm_wrap<- function(formula, data= wls, family="binomial"
                     )
     {
     mylogit <- glm(formula, data = data, family = family)
     # convert logits to probabilities
     pred_prob <- expit(predict(mylogit))
-    df<- data.frame(outcome_vector[as.integer(names(pred_prob))], pred_prob)
+    df<- data.frame(mylogit$model[,1], pred_prob)
     names(df)<- c("outcome", "predicted_probability") 
     return(df)
     }
@@ -127,6 +127,19 @@ pp_df<- glm_wrap(HAC2011 ~ sex + age + highchol2011 + smokever2011 + diabetes201
 library(pROC)
 auc(pp_df$outcome, pp_df$predicted_probability)
 plot.roc(pp_df$outcome, pp_df$predicted_probability)
+plot.roc_wrap <- function(out_df # a dataframe outputted from glm_wrap()
+                          )
+    {
+    plot.roc(out_df$outcome, out_df$predicted_probability)
+    }
+
+plot.roc_wrap(glm_wrap(HAC2011 ~ sex + age + highchol2011 + smokever2011 + diabetes2011 + highbp2011))
+
+plot.roc_wrap(glm_wrap(doc2011 ~ sex + age + highchol2011 + smokever2011 + diabetes2011 + highbp2011))
+
+plot.roc_wrap(glm_wrap(HAC2004 ~ sex + age + highchol2011 + smokever2011 + diabetes2011 + highbp2011))
+
+plot.roc_wrap(glm_wrap(doc2004 ~ sex + age + highchol2011 + smokever2011 + diabetes2011 + highbp2011))
 
 ```
 

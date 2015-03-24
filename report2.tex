@@ -24,6 +24,15 @@
 \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
 }{}
 \usepackage[margin=2cm]{geometry}
+\usepackage{graphicx}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
 \ifxetex
   \usepackage[setpagesize=false, % page size defined by xetex
               unicode=false, % unicode breaks when used with xetex
@@ -145,6 +154,8 @@ variables per subject. 2209 subjects responded (with yes or no) to the
 
 \subsection{Exploratory data analyses}\label{exploratory-data-analyses}
 
+\todo[inline, color = green]{what to explore for categorical data? Only the proportion in each category????}
+
 \subsection{Statistical modeling}\label{statistical-modeling}
 
 We used statistical modeling to try to identify covariates that
@@ -185,6 +196,15 @@ Treated for high blood pressure & None\\
 \end{tabular}
 \caption{Framingham study variables and their closest analogs in WLS. (* SBP not available, so we used reported "high BP".)}
 \end{table}
+
+Area under the curve: 0.7423
+\includegraphics{report2_files/figure-latex/pROC-1.pdf} Call:
+plot.roc.default(x =
+pp\_df\(outcome, predictor = pp_df\)predicted\_probability)
+
+Data: pp\_df\(predicted_probability in 5041 controls (pp_df\)outcome No)
+\textless{} 418 cases (pp\_df\$outcome Yes). Area under the curve:
+0.7423
 
 Leek (2015)
 
