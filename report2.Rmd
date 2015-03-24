@@ -126,6 +126,8 @@ pp_df<- glm_wrap(HAC2011 ~ sex + age + highchol2011 + smokever2011 + diabetes201
 ```{r pROC}
 library(pROC)
 auc(pp_df$outcome, pp_df$predicted_probability)
+plot.roc(pp_df$outcome, pp_df$predicted_probability)
+
 ```
 
 
