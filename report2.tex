@@ -66,6 +66,7 @@ Longitudinal Survey}
 
 
 \usepackage[hypcap]{caption}
+\usepackage{subcaption}
 \usepackage[colorinlistoftodos=true]{todonotes}
 \usepackage{dcolumn}
 \usepackage{booktabs}
@@ -142,9 +143,59 @@ Our collaborators shared with us a data set that contains records for
 variables per subject. 2209 subjects responded (with yes or no) to the
 2011 question of whether they had ever had a heart attack.
 
-\subsection{References}\label{references}
+\subsection{Exploratory data analyses}\label{exploratory-data-analyses}
+
+\subsection{Statistical modeling}\label{statistical-modeling}
+
+We used statistical modeling to try to identify covariates that
+associated with six distinct outcomes: 1) HA2004, 2) HA2011, 3) DOC2004,
+4) DOC2011, 5) new self-reported heart attacks (from 2004 to 2011) and
+6) new heart attack per doctor's report (from 2004 to 2011). For a
+subject to qualify as a ``new'' self-reported heart attack, they must
+have responded ``No'' in 2004 and ``Yes'' in 2011. Analogous definition
+applies for ``new'' doctor-reported heart attack.
+
+We found that HA2004 had 1695 non-missing responders (with 665
+responding ``Yes'' and 1030 responding ``No''). Further response counts
+are provided in
+
+\subsubsection{Statistical modeling with Framingham study
+predictors}\label{statistical-modeling-with-framingham-study-predictors}
+
+We identified those variables in the WLS that closely match those in the
+Framingham study (D'Agostino et al. 2008) ( Table \ref{tab:fram2wls}).
+It's important to note that the Framingham study used survival analysis
+methods, including Cox proportional hazards regression, to identify risk
+factors for a cardiovascular event. Thus, their study design, analysis,
+and purpose differ from ours.
+
+\begin{table}
+\begin{tabular}{l r}\label{tab:fram2wls}
+Framingham study variable & WLS Variable\\
+\hline
+Sex & Sex\\
+Quantitative total cholesterol & highchol2011 or highchol2004\\
+Quantitative HDL cholesterol & None\\
+Smoking & Columns 61 to 87 aim to quantify smoking \\
+Diabetes & diabetes2004, diabetes2011, diabdiag2004, diabdiag2011\\
+Age & Age\\
+Systolic BP & highbp2004, highbp2011* \\
+Treated for high blood pressure & None\\
+\hline
+\end{tabular}
+\caption{Framingham study variables and their closest analogs in WLS. (* SBP not available, so we used reported "high BP".)}
+\end{table}
 
 Leek (2015)
+
+\subsection*{References}\label{references}
+\addcontentsline{toc}{subsection}{References}
+
+D'Agostino, Ralph B, Ramachandran S Vasan, Michael J Pencina, Philip A
+Wolf, Mark Cobain, Joseph M Massaro, and William B Kannel. 2008.
+``General Cardiovascular Risk Profile for Use in Primary Care the
+Framingham Heart Study.'' \emph{Circulation} 117 (6). Am Heart Assoc:
+743--53.
 
 Leek, Jeff. 2015. \emph{The Elements of Data Analytic Style}. Leanpub.
 

@@ -2,14 +2,12 @@
 title: "Stat998 - Project 2"
 author: "Fred Boehm"
 date: "March 12, 2015"
-bibliography: stat998_2.bib
 output:
-  html_document:
-    fig_caption:
-    - yes
   pdf_document:
-    fig_caption:
-    - yes
+    fig_caption: yes
+  html_document:
+    fig_caption: yes
+bibliography: stat998_2.bib
 ---
 
 ```{r "setup", echo=FALSE}
@@ -57,6 +55,32 @@ One possible approach is to identify values of these variables at 2004, when man
 
 
 Q: Do we have survey questions that address the presence of other (non-MI) cardiovascular events? For instance, do we distinguish stroke from MI (myocardial infarction)? 
+
+We identified those variables in the WLS that closely match those in the Framingham study [@d2008general]. It's important to note that the Framingham study used survival analysis methods, including Cox proportional hazards regression, to identify risk factors for a cardiovascular event. Thus, their study design, analysis, and purpose differ from ours. 
+
+\begin{tabular}{ l c r }
+  1 & 2 & 3 \\
+  4 & 5 & 6 \\
+  7 & 8 & 9 \\
+\end{tabular}
+
+
+\begin{table}
+\begin{tabular}{l r}
+Framingham study variable & WLS Variable\\
+\hline
+Sex & Sex\\
+Quantitative total cholesterol & highchol2011 or highchol2004\\
+Quantitative HDL cholesterol & None\\
+Smoking & Columns 61 to 87 aim to quantify smoking \\
+Diabetes & diabetes2004, diabetes2011, diabdiag2004, diabdiag2011\\
+Age & Age\\
+Systolic BP & highbp2004, highbp2011* \\
+Treated for high blood pressure & None
+\end{tabular}
+\caption{Framingham study variables and their closest analogs in WLS.}
+\subcaption{* SBP not available, so we used reported "high BP".}
+\end{table}
 
 ## References
 
