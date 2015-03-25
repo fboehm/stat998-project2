@@ -12,6 +12,7 @@ output:
 fontsize: 11pt
 geometry: margin=2cm
 bibliography: stat998_2.bib
+csl: chicago-annotated-bibliography.csl
 ---
 
 \listoftodos
@@ -20,8 +21,9 @@ bibliography: stat998_2.bib
 rm(list=ls())
 
 library(knitr)
-opts_chunk$set(cache=FALSE, echo=FALSE, results= 'asis', message = FALSE, warning=FALSE, tidy=TRUE, highlight=TRUE, fig.show='asis')
+opts_chunk$set(cache=FALSE, echo=FALSE, results= 'hide', message = FALSE, warning=FALSE, tidy=TRUE, highlight=TRUE, fig.show='asis')
 ```
+
 
 ```{r "readdat"}
 library(tidyr)
@@ -33,8 +35,8 @@ library(gbm)
 wls<- tbl_df(read.csv("WLS2.csv"))
 ```
 
-```{r HA2011responders}
-wls_ha2011responders <- wls[!is.na(wls$HA2011),]
+```{r HAC2011responders}
+wls_ha2011responders <- wls[!is.na(wls$HAC2011),]
 
 ```
 
@@ -69,14 +71,18 @@ Our collaborators shared with us a data set that contains records for `r nrow(wl
 
 ## Exploratory data analyses
 
+Since our WLS data included `r ncol(wls)` variables, we won't provide summaries for all of them in this document. Instead, we focus our exploratory analyses on our response variables (HAC2011, HAC2004, HACinc, doc2011, doc2004, docinc) and covariates that other researchers have identified as associated with coronary artery disease. 
+
+Age is known, from epidemiologic studies, to be a strong risk factor for CAD, with older individuals having an elevated CAD risk.  
 
 \todo[inline, color = green]{what to explore for categorical data? Only the proportion in each category????}
 
 ## Statistical modeling
 
-We used statistical modeling to try to identify covariates that associated with six distinct outcomes: 1) HA2004, 2) HA2011, 3) DOC2004, 4) DOC2011, 5) new self-reported heart attacks (from 2004 to 2011) and 6) new heart attack per doctor's report (from 2004 to 2011). For a subject to qualify as a "new" self-reported heart attack, they must have responded "No" in 2004 and "Yes" in 2011. Analogous definition applies for "new" doctor-reported heart attack.
+We used statistical modeling to try to identify covariates that associated with six distinct outcomes: 1) HAC2004, 2) HAC2011, 3) DOC2004, 4) DOC2011, 5) new self-reported heart attacks (from 2004 to 2011) and 6) new heart attack per doctor's report (from 2004 to 2011). For a subject to qualify as a "new" self-reported heart attack, they must have responded "No" in 2004 and "Yes" in 2011. Analogous definition applies for "new" doctor-reported heart attack.
 
-We found that HA2004 had `r sum(!is.na(wls$HA2004), na.rm=TRUE)` non-missing responders (with `r sum(wls$HA2004=="Yes", na.rm=TRUE)` responding "Yes" and `r sum(wls$HA2004=="No", na.rm=TRUE)` responding "No"). Further response counts are provided in 
+We found that HAC2004 had `r sum(!is.na(wls$HAC2004), na.rm=TRUE)` non-missing responders (with `r sum(wls$HAC2004=="Yes", na.rm=TRUE)` responding "Yes" and `r sum(wls$HAC2004=="No", na.rm=TRUE)` responding "No"). Counts for other variables are provided in Appendix A. 
+
 
 
 
@@ -102,6 +108,8 @@ Treated for high blood pressure & None\\
 \caption{Framingham study variables and their closest analogs in WLS. (* SBP not available, so we used reported "high BP".)}
 \end{table}
 
+Because the risk factors from the Framingham study have strong effect sizes, are easily interpreted, and widely used by both physicians and public health scientists, we decided to perform logistic regression analyses with solely those WLS variables that most closely matched the Framingham variables. We analyzed each of the 6 outcomes of interest. For each outcome variable, we fitted a logistic regression model using the entire data set (omitting those subjects with missing data). We then transformed the fitted logit values to probabilities before plotting a receiver operating characteristic (ROC) curve for each model, in which we use the fitted probabilities to examine the trade-off between specificity and sensitivity. We also calculated the area under the curve (AUC) for each ROC curve [@pROC].
+
 
 ```{r logistic_framingham}
 
@@ -125,27 +133,120 @@ pp_df<- glm_wrap(HAC2011 ~ sex + age + highchol2011 + smokever2011 + diabetes201
 
 ```{r pROC}
 library(pROC)
-auc(pp_df$outcome, pp_df$predicted_probability)
-plot.roc(pp_df$outcome, pp_df$predicted_probability)
+
 plot.roc_wrap <- function(out_df # a dataframe outputted from glm_wrap()
                           )
     {
-    plot.roc(out_df$outcome, out_df$predicted_probability)
+    plot.roc(out_df$outcome, out_df$predicted_probability, print.auc=TRUE, ci=TRUE, ci.type = "shape")
     }
 
+```
+
+
+```{r plot-hac2011}
 plot.roc_wrap(glm_wrap(HAC2011 ~ sex + age + highchol2011 + smokever2011 + diabetes2011 + highbp2011))
+```
 
+
+```{r plot-doc2011}
 plot.roc_wrap(glm_wrap(doc2011 ~ sex + age + highchol2011 + smokever2011 + diabetes2011 + highbp2011))
+```
 
+
+```{r plot-hac2004}
 plot.roc_wrap(glm_wrap(HAC2004 ~ sex + age + highchol2011 + smokever2011 + diabetes2011 + highbp2011))
+```
 
+```{r plot-doc2004}
 plot.roc_wrap(glm_wrap(doc2004 ~ sex + age + highchol2011 + smokever2011 + diabetes2011 + highbp2011))
 
 ```
 
 
+### Subgroup-specific modeling
 
-@leek2015
+```{r subdivide_sex}
+wls_fem<- wls[wls$sex == "Female",]
+wls_mal<- wls[wls$sex == "Male",]
+```
+
+```{r plot-hac2011-males}
+plot.roc_wrap(glm_wrap(HAC2011 ~ age + highchol2011 + smokever2011 + diabetes2011 + highbp2011, data=wls_mal))
+plot.roc_wrap(glm_wrap(doc2011 ~ age + highchol2011 + smokever2011 + diabetes2011 + highbp2011, data=wls_mal))
+plot.roc_wrap(glm_wrap(HAC2004 ~ age + highchol2011 + smokever2011 + diabetes2011 + highbp2011, data=wls_mal))
+plot.roc_wrap(glm_wrap(doc2004 ~ age + highchol2011 + smokever2011 + diabetes2011 + highbp2011, data=wls_mal))
+
+```
+
+
+```{r plot-hac2011-females}
+plot.roc_wrap(glm_wrap(HAC2011 ~ age + highchol2011 + smokever2011 + diabetes2011 + highbp2011, data=wls_fem))
+plot.roc_wrap(glm_wrap(doc2011 ~ age + highchol2011 + smokever2011 + diabetes2011 + highbp2011, data=wls_fem))
+plot.roc_wrap(glm_wrap(HAC2004 ~ age + highchol2011 + smokever2011 + diabetes2011 + highbp2011, data=wls_fem))
+plot.roc_wrap(glm_wrap(doc2004 ~ age + highchol2011 + smokever2011 + diabetes2011 + highbp2011, data=wls_fem))
+
+```
+
+
+```{r subdivide-diabetes2004}
+wls_dm04<- wls[wls$diabetes2004 == "Yes",]
+wls_nodm04<- wls[wls$diabetes2004 == "No",]
+plot.roc_wrap(glm_wrap(HAC2011 ~ sex + age + highchol2011 + smokever2011 + highbp2011, data=wls_nodm04))
+```
+
+```{r}
+# write a function that 1. partitions wls by a binary variable and outputs two data subsets as a list.
+subdivide <- function(data = wls, indicator = sex)
+    {
+    out <- list(wls[indicator,], wls[!indicator,])
+    return(out)
+    }
+
+```
+
+
+```{r fivefoldcv}
+
+```
+
+## Results
+
+
+
+
+## Discussion
+
+
+
+
+
+## Future directions
+
+Given the relatively low cost of acquiring genomics data, one possible future direction is to acquire genomics data for a subset of study subjects. For example, SNP genotype data from each subject may enable us to further discriminate those subjects that are at high risk for a CAD event. Such knowledge may be translated into the proposed intervention program, for example, by promoting healthy diet and physical activity among those at greatest risk. 
+
+
+
+\newpage
+
+## Appendix A: Supplementary materials
+
+
+
+\newpage 
+
+## Appendix B: Questions for client
+
+
+\newpage
+
+## Appendix C: Computing code 
+
+
+\newpage
+
+## Appendix D: Additional note  
+
+Throughout this report, we tried to adhere to the style suggested by @leek2015. We used the R statistical environment for all calculations[@r2015]. 
 
 
 ## References

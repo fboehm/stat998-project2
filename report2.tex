@@ -95,14 +95,14 @@ Longitudinal Survey}
 Coronary artery disease (CAD) is a leading cause of death in the United
 States and much of North America and Europe. In 2011, one American died
 of CAD every 40 seconds, on average, and 155,000 of those deaths were
-people aged less than 65 years (Mozaffarian et al. 2015). One
-manifestation of CAD is a myocardial infarction (MI), which is also
-called a ``heart attack''. A MI results from a clot in a coronary artery
-that diminishes blood flow to the heart muscle, or myocardium. If blood
-flow disruption persists for a sufficiently long time, the muscle may
-die, or infarct. The irreparable dead heart muscle diminishes the
-overall ability of the heart to pump blood. Severe MIs may lead to a
-patient's death.
+people aged less than 65 years.\footnote{Mozaffarian et al., ``Executive
+  Summary.'' } One manifestation of CAD is a myocardial infarction (MI),
+which is also called a ``heart attack''. A MI results from a clot in a
+coronary artery that diminishes blood flow to the heart muscle, or
+myocardium. If blood flow disruption persists for a sufficiently long
+time, the muscle may die, or infarct. The irreparable dead heart muscle
+diminishes the overall ability of the heart to pump blood. Severe MIs
+may lead to a patient's death.
 
 Epidemiologists have identified modifiable and non-modifiable risk
 factors that contribute to CAD risk. Smoking is among the strongest
@@ -134,8 +134,8 @@ sample of 10,317 men and women who graduated from Wisconsin high schools
 in 1957. According to the WLS website ``WLS provides an opportunity to
 study the life course, intergenerational transfers and relationships,
 family functioning, physical and mental health and well-being, and
-morbidity and mortality from late adolescence through
-2011.''(``Wisconsin Longitudinal Study'' 2015)
+morbidity and mortality from late adolescence through 2011.''\footnote{``Wisconsin
+  Longitudinal Study''. }
 
 \todo[inline, color = blue]{need more info on WLS?}
 
@@ -149,36 +149,46 @@ from widow(er)s of the graduates and siblings in 2006.
 
 Our collaborators shared with us a data set that contains records for
 19095 individuals (including original subjects and siblings) with 310
-variables per subject. 2209 subjects responded (with yes or no) to the
+variables per subject. 9363 subjects responded (with yes or no) to the
 2011 question of whether they had ever had a heart attack.
 
 \subsection{Exploratory data analyses}\label{exploratory-data-analyses}
+
+Since our WLS data included 310 variables, we won't provide summaries
+for all of them in this document. Instead, we focus our exploratory
+analyses on our response variables (HAC2011, HAC2004, HACinc, doc2011,
+doc2004, docinc) and covariates that other researchers have identified
+as associated with coronary artery disease.
+
+Age is known, from epidemiologic studies, to be a strong risk factor for
+CAD, with older individuals having an elevated CAD risk.
 
 \todo[inline, color = green]{what to explore for categorical data? Only the proportion in each category????}
 
 \subsection{Statistical modeling}\label{statistical-modeling}
 
 We used statistical modeling to try to identify covariates that
-associated with six distinct outcomes: 1) HA2004, 2) HA2011, 3) DOC2004,
-4) DOC2011, 5) new self-reported heart attacks (from 2004 to 2011) and
-6) new heart attack per doctor's report (from 2004 to 2011). For a
-subject to qualify as a ``new'' self-reported heart attack, they must
-have responded ``No'' in 2004 and ``Yes'' in 2011. Analogous definition
-applies for ``new'' doctor-reported heart attack.
+associated with six distinct outcomes: 1) HAC2004, 2) HAC2011, 3)
+DOC2004, 4) DOC2011, 5) new self-reported heart attacks (from 2004 to
+2011) and 6) new heart attack per doctor's report (from 2004 to 2011).
+For a subject to qualify as a ``new'' self-reported heart attack, they
+must have responded ``No'' in 2004 and ``Yes'' in 2011. Analogous
+definition applies for ``new'' doctor-reported heart attack.
 
-We found that HA2004 had 1695 non-missing responders (with 665
-responding ``Yes'' and 1030 responding ``No''). Further response counts
-are provided in
+We found that HAC2004 had 11534 non-missing responders (with 665
+responding ``Yes'' and 10869 responding ``No''). Counts for other
+variables are provided in Appendix A.
 
 \subsubsection{Statistical modeling with Framingham study
 predictors}\label{statistical-modeling-with-framingham-study-predictors}
 
 We identified those variables in the WLS that closely match those in the
-Framingham study (D'Agostino et al. 2008) ( Table \ref{tab:fram2wls}).
-It's important to note that the Framingham study used survival analysis
-methods, including Cox proportional hazards regression, to identify risk
-factors for a cardiovascular event. Thus, their study design, analysis,
-and purpose differ from ours.
+Framingham study\footnote{D'Agostino et al., ``General Cardiovascular
+  Risk Profile for Use in Primary Care the Framingham Heart Study.'' } (
+Table \ref{tab:fram2wls}). It's important to note that the Framingham
+study used survival analysis methods, including Cox proportional hazards
+regression, to identify risk factors for a cardiovascular event. Thus,
+their study design, analysis, and purpose differ from ours.
 
 \begin{table}
 \begin{tabular}{l r}\label{tab:fram2wls}
@@ -197,35 +207,128 @@ Treated for high blood pressure & None\\
 \caption{Framingham study variables and their closest analogs in WLS. (* SBP not available, so we used reported "high BP".)}
 \end{table}
 
-Area under the curve: 0.7423
-\includegraphics{report2_files/figure-latex/pROC-1.pdf} Call:
-plot.roc.default(x =
-pp\_df\(outcome, predictor = pp_df\)predicted\_probability)
+Because the risk factors from the Framingham study have strong effect
+sizes, are easily interpreted, and widely used by both physicians and
+public health scientists, we decided to perform logistic regression
+analyses with solely those WLS variables that most closely matched the
+Framingham variables. We analyzed each of the 6 outcomes of interest.
+For each outcome variable, we fitted a logistic regression model using
+the entire data set (omitting those subjects with missing data). We then
+transformed the fitted logit values to probabilities before plotting a
+receiver operating characteristic (ROC) curve for each model, in which
+we use the fitted probabilities to examine the trade-off between
+specificity and sensitivity. We also calculated the area under the curve
+(AUC) for each ROC curve.\footnote{Robin et al., ``PROC.'' }
 
-Data: pp\_df\(predicted_probability in 5041 controls (pp_df\)outcome No)
-\textless{} 418 cases (pp\_df\$outcome Yes). Area under the curve:
-0.7423
+\begin{figure}[htbp]
+\centering
+\includegraphics{report2_files/figure-latex/plot-hac2011-1.pdf}
+\caption{}
+\end{figure}
 
-Leek (2015)
+\begin{figure}[htbp]
+\centering
+\includegraphics{report2_files/figure-latex/plot-doc2011-1.pdf}
+\caption{}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics{report2_files/figure-latex/plot-hac2004-1.pdf}
+\caption{}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics{report2_files/figure-latex/plot-doc2004-1.pdf}
+\caption{}
+\end{figure}
+
+\subsubsection{Subgroup-specific
+modeling}\label{subgroup-specific-modeling}
+
+\includegraphics{report2_files/figure-latex/plot-hac2011-males-1.pdf}
+\includegraphics{report2_files/figure-latex/plot-hac2011-males-2.pdf}
+\includegraphics{report2_files/figure-latex/plot-hac2011-males-3.pdf}
+\includegraphics{report2_files/figure-latex/plot-hac2011-males-4.pdf}
+
+\includegraphics{report2_files/figure-latex/plot-hac2011-females-1.pdf}
+\includegraphics{report2_files/figure-latex/plot-hac2011-females-2.pdf}
+\includegraphics{report2_files/figure-latex/plot-hac2011-females-3.pdf}
+\includegraphics{report2_files/figure-latex/plot-hac2011-females-4.pdf}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics{report2_files/figure-latex/subdivide-diabetes2004-1.pdf}
+\caption{}
+\end{figure}
+
+\subsection{Results}\label{results}
+
+\subsection{Discussion}\label{discussion}
+
+\subsection{Future directions}\label{future-directions}
+
+Given the relatively low cost of acquiring genomics data, one possible
+future direction is to acquire genomics data for a subset of study
+subjects. For example, SNP genotype data from each subject may enable us
+to further discriminate those subjects that are at high risk for a CAD
+event. Such knowledge may be translated into the proposed intervention
+program, for example, by promoting healthy diet and physical activity
+among those at greatest risk.
+
+\newpage
+
+\subsection{Appendix A: Supplementary
+materials}\label{appendix-a-supplementary-materials}
+
+\newpage 
+
+\subsection{Appendix B: Questions for
+client}\label{appendix-b-questions-for-client}
+
+\newpage
+
+\subsection{Appendix C: Computing code}\label{appendix-c-computing-code}
+
+\newpage
+
+\subsection{Appendix D: Additional
+note}\label{appendix-d-additional-note}
+
+Throughout this report, we tried to adhere to the style suggested by
+Leek.\footnote{\emph{The Elements of Data Analytic Style}.} We used the
+R statistical environment for all calculations\footnote{R Core Team,
+  \emph{R}. }.
 
 \subsection*{References}\label{references}
 \addcontentsline{toc}{subsection}{References}
 
 D'Agostino, Ralph B, Ramachandran S Vasan, Michael J Pencina, Philip A
-Wolf, Mark Cobain, Joseph M Massaro, and William B Kannel. 2008.
-``General Cardiovascular Risk Profile for Use in Primary Care the
-Framingham Heart Study.'' \emph{Circulation} 117 (6). Am Heart Assoc:
-743--53.
+Wolf, Mark Cobain, Joseph M Massaro, and William B Kannel. ``General
+Cardiovascular Risk Profile for Use in Primary Care the Framingham Heart
+Study.'' \emph{Circulation} 117, no. 6 (2008): 743--53.
 
-Leek, Jeff. 2015. \emph{The Elements of Data Analytic Style}. Leanpub.
+Leek, Jeff. \emph{The Elements of Data Analytic Style}. Leanpub,
+2015Available at \url{https://leanpub.com/datastyle}.
 
 Mozaffarian, Dariush, Emelia J Benjamin, Alan S Go, Donna K Arnett,
-Michael J Blaha, Mary Cushman, Sarah de Ferranti, et al. 2015.
-``Executive Summary: Heart Disease and Stroke Statistics---2015 Update a
-Report from the American Heart Association.'' \emph{Circulation} 131
-(4). Am Heart Assoc: 434--41.
+Michael J Blaha, Mary Cushman, Sarah de Ferranti, et al. ``Executive
+Summary: Heart Disease and Stroke Statistics---2015 Update a Report from
+the American Heart Association.'' \emph{Circulation} 131, no. 4 (2015):
+434--41.
 
-``Wisconsin Longitudinal Study''. 2015.
-\url{http://www.ssc.wisc.edu/wlsresearch/}.
+R Core Team. \emph{R: A Language and Environment for Statistical
+Computing}. Vienna, Austria: R Foundation for Statistical Computing,
+2015. \url{http://www.R-project.org/}.
+
+Robin, Xavier, Natacha Turck, Alexandre Hainard, Natalia Tiberti,
+Frédérique Lisacek, Jean-Charles Sanchez, and Markus Müller. ``PROC: An
+Open-Source Package for R and S+ to Analyze and Compare ROC Curves.''
+\emph{BMC Bioinformatics} 12 (2011): 77.
+
+``Wisconsin Longitudinal Study''.
+\url{http://www.ssc.wisc.edu/wlsresearch/}, 2015Accessed on
+21-March-2015.
 
 \end{document}
