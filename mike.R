@@ -1,12 +1,11 @@
-gbmCV <- function(x, y, folds, tree_inc, dist="adaboost", id=1, bf=.5, sh=.001, singlefold=F) {
-  
   getDev <- function(p, y) -mean(ifelse(y==1, log(p), log(1-p)))
   getDevmod <- function(p, y) getDev(pmin(pmax(p, .001), .999), y)
   getMse <- function(p, y) mean((y-p)^2)
   getMisclass <- function(p, y) mean(abs((p>.5)-y))
   getAUC <- function(p, y) auc(y,p)
   
-  
+glmCV <- function(x, y, folds, id=1, sh=.001, singlefold=FALSE) 
+  {
   dev <- vector()
   devmod <- vector()
   mse <- vector()
@@ -16,9 +15,9 @@ gbmCV <- function(x, y, folds, tree_inc, dist="adaboost", id=1, bf=.5, sh=.001, 
   for (i in 1:cv_num) {
     train_id <- Reduce(union, folds[-i])
     test_id <- folds[[i]]
-    xtrain <- x[train_id,,drop=F]
+    xtrain <- x[train_id,,drop=FALSE]
     ytrain <- y[train_id]
-    xtest <- x[test_id,,drop=F]
+    xtest <- x[test_id,,drop=FALSE]
     ytest <- y[test_id]
     recover()
     logist_fit <- glm(ytrain ~ xtrain, family = "binomial") #might need to adjust formula code here
@@ -33,5 +32,5 @@ gbmCV <- function(x, y, folds, tree_inc, dist="adaboost", id=1, bf=.5, sh=.001, 
     auc1[i] <- getAUC(pred, ytest)
   }
   
-  cbind(dev, devmod, mse, misclass, auc=auc1, best_tree)
-} # end gbmCV
+  cbind(dev, devmod, mse, misclass, auc=auc1)
+} # end glmCV

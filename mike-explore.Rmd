@@ -1,0 +1,790 @@
+---
+title: "Untitled"
+author: "Mike Wurm"
+date: "03/12/2015"
+output: html_document
+---
+
+```{r}
+require(caret)
+require(car)
+require(plotrix)
+require(ggplot2)
+require(pROC)
+require(gbm)
+require(rpart)
+
+## Framingham variables
+framvar11 <- c("sex","age","highchol2011","smokever2011","diabetes2011","highbp2011")
+# framvar11b <- c("sex","age","highchol2011","highcholage2011","smokever2011","diabetes2011",
+#                               "diabdiag2011","highbp2011","highbpyrdiag2011")
+framvar04 <- c("sex","age","highchol2004","smokever2004","diabetes2004","highbp2004")
+# framvar04b <- c("sex","age","highchol2004","highcholage2004","smokever2004","diabetes2004",
+#                               "diabdiag2004","highbp2004","highbpyrdiag2004")
+
+## append missing value indicators to covariates "x"
+dat <- read.csv("/mnt/DATA/Main/Spring 2015/998/Proj2/docs/WLS2.csv")
+x1 <- dat[, !colnames(dat) %in% c("HA2011", "HA2004", "HAC2011", "HAC2004", "doc2011", "doc2004")]
+miss_pct <- sapply(colnames(x1), function(nam) mean(is.na(dat[,nam])))
+x2 <- data.frame((is.na(x1[,miss_pct>.1])*1))
+names(x2) <- paste0(names(x1[miss_pct>.1]), "_missid")
+x <- data.frame(x1,x2)  # appended with a missing value indicator for each variable
+id_11 <- grepl("2011", names(x))
+x04 <- x[,!id_11]  # excluding 2011 covariates
+id1_11 <- grepl("2011", names(x1))
+x104 <- x1[,!id1_11]  # no missing value indicators, excluding 2011 covariates
+
+## create cross validation folds for response variables
+## Note gbm requires integer response in {0,1}
+h11 <- Recode(dat$HAC2011, "'Yes'=1; 'No'=0", as.factor=F)
+h04 <- Recode(dat$HAC2004, "'Yes'=1; 'No'=0", as.factor=F)
+d11 <- Recode(dat$doc2011, "'Yes'=1; 'No'=0", as.factor=F)
+d04 <- Recode(dat$doc2004, "'Yes'=1; 'No'=0", as.factor=F)
+h0411 <- rep(0, length(h11))
+h0411[is.na(h04+h11) | h04==1] <- NA
+h0411[h04==0 & h11==1] <- 1
+d0411 <- rep(0, length(d11))
+d0411[is.na(d04+d11) | d04==1] <- NA
+d0411[d04==0 & d11==1] <- 1
+
+set.seed(9881829)
+folds_h11_temp <- createFolds(which(!is.na(h11)), k = 5, list=T, returnTrain=F)
+folds_h11 <- lapply(folds_h11_temp, function(x) which(!is.na(h11))[x])
+folds_h04_temp <- createFolds(which(!is.na(h04)), k = 5, list=T, returnTrain=F)
+folds_h04 <- lapply(folds_h04_temp, function(x) which(!is.na(h04))[x])
+folds_h0411_temp <- createFolds(which(!is.na(h0411)), k = 5, list=T, returnTrain=F)
+folds_h0411 <- lapply(folds_h0411_temp, function(x) which(!is.na(h0411))[x])
+folds_d11_temp <- createFolds(which(!is.na(d11)), k = 5, list=T, returnTrain=F)
+folds_d11 <- lapply(folds_d11_temp, function(x) which(!is.na(d11))[x])
+folds_d04_temp <- createFolds(which(!is.na(d04)), k = 5, list=T, returnTrain=F)
+folds_d04 <- lapply(folds_d04_temp, function(x) which(!is.na(d04))[x])
+folds_d0411_temp <- createFolds(which(!is.na(d0411)), k = 5, list=T, returnTrain=F)
+folds_d0411 <- lapply(folds_d0411_temp, function(x) which(!is.na(d0411))[x])
+rm(folds_h11_temp, folds_h04_temp, folds_h0411_temp, folds_d11_temp, folds_d04_temp, folds_d0411_temp)
+## check
+check <- function(folds, y) {
+  u <- Reduce(union, folds)
+  ch1 <- length(u)==length(unique(u))
+  l <- sapply(folds_h11, length)
+  ch2 <- max(abs(l-mean(l))) <=1
+  ch3 <- sum(is.na(y[u]))==0
+  status <- if (ch1&ch2&ch3) "ok" else "error"
+  status
+}
+check(folds_h11, h11)
+check(folds_h04, h04)
+check(folds_h0411, h0411)
+check(folds_d11, d11)
+check(folds_d04, d04)
+check(folds_d0411, d0411)
+
+## data summary
+round(miss_pct, 2)
+mean(is.na(h11))
+mean(is.na(h04))
+mean(is.na(d11))
+mean(is.na(d04))
+table(h11, h04, useNA="always")
+table(d11, d04, useNA="always")
+```
+
+```{r, eval=F}
+## fit gbm to full data
+gbmInit <- function(y, x, folds, tree_inc=1000, sh=.001) {
+  id <- Reduce(union, folds)
+  xfit <- x[id,]
+  yfit <- y[id]
+  ntree <- tree_inc
+  gbm_fit <- gbm.fit(xfit, yfit, distribution="adaboost", n.tree=tree_inc, shrinkage=sh)
+  while (gbm.perf(gbm_fit, method="OOB")==ntree) {
+    ntree <- ntree + tree_inc
+    gbm_fit <- gbm.more(gbm_fit, n.new.trees=tree_inc)
+  }
+  gbm_fit
+}
+# set.seed(3382624)
+# gbm_h11 <- gbmInit(h11, x, folds_h11, 1000)
+# gbm_h04 <- gbmInit(h04, x, folds_h04, 1000)
+# gbm_d11 <- gbmInit(d11, x, folds_d11, 1000)
+# gbm_d04 <- gbmInit(d04, x, folds_d04, 1000)
+# set.seed(858874)
+# gbm_h0411 <- gbmInit(h0411, x04, folds_h0411, 1000)
+# gbm_d0411 <- gbmInit(d0411, x04, folds_d0411, 1000)
+# set.seed(1909459)
+# gbm_h04v2 <- gbmInit(h04, x04, folds_h04, 1000)
+# gbm_d04v2 <- gbmInit(d04, x04, folds_d04, 1000)
+# save(gbm_h11, gbm_h04, gbm_d11, gbm_d04, gbm_h0411, gbm_d0411, gbm_h04v2, gbm_d04v2,
+#      file="/mnt/DATA/Main/Spring 2015/998/Proj2/models/gbm-initial.rda")
+load("/mnt/DATA/Main/Spring 2015/998/Proj2/models/gbm-initial.rda")
+
+best_h11 <- gbm.perf(gbm_h11, method="OOB")
+best_h04 <- gbm.perf(gbm_h04, method="OOB")
+best_d11 <- gbm.perf(gbm_d11, method="OOB")
+best_d04 <- gbm.perf(gbm_d04, method="OOB")
+best_h0411 <- gbm.perf(gbm_h0411, method="OOB")
+best_d0411 <- gbm.perf(gbm_d0411, method="OOB")
+best_h04v2 <- gbm.perf(gbm_h04v2, method="OOB")
+best_d04v2 <- gbm.perf(gbm_d04v2, method="OOB")
+
+summary(gbm_h11, n.trees=best_h11)[summary(gbm_h11, n.trees=best_h11)$rel.inf>0,]
+summary(gbm_h04, n.trees=best_h04)[summary(gbm_h04, n.trees=best_h04)$rel.inf>0,]
+summary(gbm_d11, n.trees=best_d11)[summary(gbm_d11, n.trees=best_d11)$rel.inf>0,]
+summary(gbm_d04, n.trees=best_d04)[summary(gbm_d04, n.trees=best_d04)$rel.inf>0,]
+summary(gbm_h0411, n.trees=best_h0411)[summary(gbm_h0411, n.trees=best_h0411)$rel.inf>0,]
+summary(gbm_d0411, n.trees=best_d0411)[summary(gbm_d0411, n.trees=best_d0411)$rel.inf>0,]
+summary(gbm_h04v2, n.trees=best_h04v2)[summary(gbm_h04v2, n.trees=best_h04v2)$rel.inf>0,]
+summary(gbm_d04v2, n.trees=best_d04v2)[summary(gbm_d04v2, n.trees=best_d04v2)$rel.inf>0,]
+
+## same but different shrinkage
+# set.seed(96633)
+# gbm_h11b <- gbmInit(h11, x, folds_h11, 1000, .01)
+# gbm_h04b <- gbmInit(h04, x04, folds_h04, 1000, .01)
+# gbm_h0411b <- gbmInit(h0411, x04, folds_h0411, 1000, .01)
+# gbm_d11b <- gbmInit(d11, x, folds_d11, 1000, .01)
+# gbm_d04b <- gbmInit(d04, x04, folds_d04, 1000, .01)
+# gbm_d0411b <- gbmInit(d0411, x04, folds_d0411, 1000, .01)
+# save(gbm_h11b, gbm_h04b, gbm_h0411b, gbm_d11b, gbm_d04b, gbm_d0411b,
+#      file="/mnt/DATA/Main/Spring 2015/998/Proj2/models/gbm-initialb.rda")
+load("/mnt/DATA/Main/Spring 2015/998/Proj2/models/gbm-initialb.rda")
+
+best_h11b <- gbm.perf(gbm_h11b, method="OOB")
+best_h04b <- gbm.perf(gbm_h04b, method="OOB")
+best_h0411b <- gbm.perf(gbm_h0411b, method="OOB")
+best_d11b <- gbm.perf(gbm_d11b, method="OOB")
+best_d04b <- gbm.perf(gbm_d04b, method="OOB")
+best_d0411b <- gbm.perf(gbm_d0411b, method="OOB")
+
+summary(gbm_h11b, n.trees=best_h11b)[summary(gbm_h11b, n.trees=best_h11b)$rel.inf>0,]
+summary(gbm_h04b, n.trees=best_h04b)[summary(gbm_h04b, n.trees=best_h04b)$rel.inf>0,]
+summary(gbm_h0411b, n.trees=best_h0411b)[summary(gbm_h0411b, n.trees=best_h0411b)$rel.inf>0,]
+summary(gbm_d11b, n.trees=best_d11b)[summary(gbm_d11b, n.trees=best_d11b)$rel.inf>0,]
+summary(gbm_d04b, n.trees=best_d04b)[summary(gbm_d04b, n.trees=best_d04b)$rel.inf>0,]
+summary(gbm_d0411b, n.trees=best_d0411b)[summary(gbm_d0411b, n.trees=best_d0411b)$rel.inf>0,]
+
+## cross validation benchmark
+gbmCV <- function(x, y, folds, tree_inc, dist="adaboost", id=1, bf=.5, sh=.001, singlefold=F) {
+  
+  getDev <- function(p, y) -mean(ifelse(y==1, log(p), log(1-p)))
+  getDevmod <- function(p, y) getDev(pmin(pmax(p, .001), .999), y)
+  getMse <- function(p, y) mean((y-p)^2)
+  getMisclass <- function(p, y) mean(abs((p>.5)-y))
+  getAUC <- function(p, y) auc(y,p)
+  
+  gbmInit2 <- function(y, x, tree_inc) {
+    tree_ct <- tree_inc
+    gbm_fit <- gbm(y~., data=x, distribution=dist, n.tree=tree_inc,
+                   shrinkage=sh, interaction.depth=id, bag.fraction=bf)
+    best_tree <- gbm.perf(gbm_fit, method="OOB")
+    while (best_tree/tree_ct>.99) {
+      tree_ct <- tree_ct + tree_inc
+      gbm_fit <- gbm.more(gbm_fit, n.new.trees=tree_inc)
+      best_tree <- gbm.perf(gbm_fit, method="OOB")
+    }
+    list(gbm_fit=gbm_fit, best_tree=best_tree)
+  }
+
+  best_tree <- vector()
+  dev <- vector()
+  devmod <- vector()
+  mse <- vector()
+  misclass <- vector()
+  auc1 <- vector()
+  cv_num <- if (singlefold) 1 else length(folds)
+  for (i in 1:cv_num) {
+    train_id <- Reduce(union, folds[-i])
+    test_id <- folds[[i]]
+    xtrain <- x[train_id,,drop=F]
+    ytrain <- y[train_id]
+    xtest <- x[test_id,,drop=F]
+    ytest <- y[test_id]
+    init <- gbmInit2(ytrain, xtrain, tree_inc)
+    gbm_fit <- init$gbm_fit
+    best_tree[i] <- init$best_tree
+    ## predicted probability of class 1
+    pred <- predict(gbm_fit, newdata=xtest, n.trees=best_tree[i], type="response")
+    dev[i] <- getDev(pred, ytest)
+    devmod[i] <- getDevmod(pred, ytest)
+    mse[i] <- getMse(pred, ytest)
+    misclass[i] <- getMisclass(pred, ytest)
+    auc1[i] <- getAUC(pred, ytest)
+  }
+  
+  cbind(dev, devmod, mse, misclass, auc=auc1, best_tree)
+} # end gbmCV
+
+## 1-fold gbm tuning parameter tests (excluding missing value indicators to save time)
+par <- rbind(
+  data.frame(dist="adaboost", id=1, bf=.5, sh=.01),
+  data.frame(dist="bernoulli", id=1, bf=.5, sh=.01),
+  data.frame(dist="adaboost", id=3, bf=.5, sh=.01),
+  data.frame(dist="bernoulli", id=3, bf=.5, sh=.01),
+  data.frame(dist="adaboost", id=5, bf=.5, sh=.01),
+  data.frame(dist="bernoulli", id=5, bf=.5, sh=.01),
+  data.frame(dist="adaboost", id=7, bf=.5, sh=.01),
+  data.frame(dist="bernoulli", id=7, bf=.5, sh=.01),
+  data.frame(dist="adaboost", id=1, bf=.3, sh=.01),
+  data.frame(dist="bernoulli", id=1, bf=.3, sh=.01),
+  data.frame(dist="adaboost", id=1, bf=.7, sh=.01),
+  data.frame(dist="bernoulli", id=1, bf=.7, sh=.01),
+  data.frame(dist="adaboost", id=1, bf=.5, sh=.001),
+  data.frame(dist="bernoulli", id=1, bf=.5, sh=.001)
+)
+# set.seed(95709963)
+# gbmcvtest_h11 <- t(mapply(dist=as.character(par$dist), id=par$id, bf=par$bf, sh=par$sh, function(dist, id, bf, sh) 
+#                         gbmCV(x1, h11, folds_h11, tree_inc=1000, dist=dist, id=id, bf=bf, sh=sh, singlefold=T)))
+# colnames(gbmcvtest_h11) <- c("dev","devmod","mse","misclass","auc","best_tree")
+# gbmcvtest_d11 <- t(mapply(dist=as.character(par$dist), id=par$id, bf=par$bf, sh=par$sh, function(dist, id, bf, sh) 
+#                         gbmCV(x1, d11, folds_d11, tree_inc=1000, dist=dist, id=id, bf=bf, sh=sh, singlefold=T)))
+# colnames(gbmcvtest_d11) <- c("dev","devmod","mse","misclass","auc","best_tree")
+# save(gbmcvtest_h11, gbmcvtest_d11, file="/mnt/DATA/Main/Spring 2015/998/Proj2/models/gbmcvtest.rda")
+load("/mnt/DATA/Main/Spring 2015/998/Proj2/models/gbmcvtest.rda")
+cbind(par, gbmcvtest_h11)
+cbind(par, gbmcvtest_d11)
+
+## 5-fold gbm tests (excluding missing value indicators to save time)
+# gbmcv_h11 <- gbmCV(x1, h11, folds_h11, tree_inc=1000, sh=.01)
+# gbmcv_h04 <- gbmCV(x104, h04, folds_h04, tree_inc=1000, sh=.01)
+# gbmcv_h0411 <- gbmCV(x104, h0411, folds_h0411, tree_inc=1000, sh=.01)
+# gbmcv_d11 <- gbmCV(x1, d11, folds_d11, tree_inc=1000, sh=.01)
+# gbmcv_d04 <- gbmCV(x104, d04, folds_d04, tree_inc=1000, sh=.01)
+# gbmcv_d0411 <- gbmCV(x104, d0411, folds_d0411, tree_inc=1000, sh=.01)
+# save(gbmcv_h11, gbmcv_h04, gbmcv_h0411, gbmcv_d11, gbmcv_d04, gbmcv_d0411, 
+#      file="/mnt/DATA/Main/Spring 2015/998/Proj2/models/gbmcv.rda")
+load("/mnt/DATA/Main/Spring 2015/998/Proj2/models/gbmcv.rda")
+gbmcv_h11
+gbmcv_h04
+gbmcv_h0411
+gbmcv_d11
+gbmcv_d04
+gbmcv_d0411
+
+
+## 5-fold gbm tests (reduced variable list)
+# set.seed(3766716)
+# gbmcv_h11r <- lapply(1:10, function(num_var) {
+#   var <- as.character(summary(gbm_h11b)[1:num_var,1])
+#   gbmCV(x[,var,drop=F], h11, folds_h11, tree_inc=1000, sh=.01)
+# })
+# gbmcv_h04r <- lapply(1:10, function(num_var) {
+#   var <- as.character(summary(gbm_h04b)[1:num_var,1])
+#   gbmCV(x[,var,drop=F], h04, folds_h04, tree_inc=1000, sh=.01)
+# })
+# gbmcv_h0411r <- lapply(1:10, function(num_var) {
+#   var <- as.character(summary(gbm_h0411b)[1:num_var,1])
+#   gbmCV(x[,var,drop=F], h0411, folds_h0411, tree_inc=1000, sh=.01)
+# })
+# gbmcv_d11r <- lapply(1:10, function(num_var) {
+#   var <- as.character(summary(gbm_d11b)[1:num_var,1])
+#   gbmCV(x[,var,drop=F], d11, folds_d11, tree_inc=1000, sh=.01)
+# })
+# gbmcv_d04r <- lapply(1:10, function(num_var) {
+#   var <- as.character(summary(gbm_d04b)[1:num_var,1])
+#   gbmCV(x[,var,drop=F], d04, folds_d04, tree_inc=1000, sh=.01)
+# })
+# gbmcv_d0411r <- lapply(1:10, function(num_var) {
+#   var <- as.character(summary(gbm_d0411b)[1:num_var,1])
+#   gbmCV(x[,var,drop=F], d0411, folds_d0411, tree_inc=1000, sh=.01)
+# })
+# save(gbmcv_h11r, gbmcv_h04r, gbmcv_h0411r, gbmcv_d11r, gbmcv_d04r, gbmcv_d0411r, 
+#      file="/mnt/DATA/Main/Spring 2015/998/Proj2/models/gbmcvr.rda")
+load("/mnt/DATA/Main/Spring 2015/998/Proj2/models/gbmcvr.rda")
+gbmcv_h11r
+gbmcv_h04r
+gbmcv_h0411r
+gbmcv_d11r
+gbmcv_d04r
+gbmcv_d0411r
+
+getMean <- function(x) mean(x[,"auc"])
+getMin <- function(x) min(x[,"auc"])
+getMax <- function(x) max(x[,"auc"])
+gbm_plotdata <- data.frame(
+  resp=factor(rep(c("HAC 2011","HAC 2004","HAC 2004-2011","doc 2011","doc 2004","doc 2004-2011"), each=12),
+              levels=c("HAC 2011","HAC 2004","HAC 2004-2011","doc 2011","doc 2004","doc 2004-2011")),
+  Variables=factor(rep(c(1:10,304,"Fram"), 6), levels=c(1:10,304,"Fram")),
+  AUC=c(sapply(gbmcv_h11r, getMean), getMean(gbmcv_h11), getMean(gbmcv_h11fram),
+         sapply(gbmcv_h04r, getMean), getMean(gbmcv_h04), getMean(gbmcv_h04fram),
+         sapply(gbmcv_h0411r, getMean), getMean(gbmcv_h0411), getMean(gbmcv_h0411fram),
+         sapply(gbmcv_d11r, getMean), getMean(gbmcv_d11), getMean(gbmcv_d11fram),
+         sapply(gbmcv_d04r, getMean), getMean(gbmcv_d04), getMean(gbmcv_d04fram),
+         sapply(gbmcv_d0411r, getMean), getMean(gbmcv_d0411), getMean(gbmcv_d0411fram)),  
+  min=c(sapply(gbmcv_h11r, getMin), getMin(gbmcv_h11), getMin(gbmcv_h11fram),
+         sapply(gbmcv_h04r, getMin), getMin(gbmcv_h04), getMin(gbmcv_h04fram),
+         sapply(gbmcv_h0411r, getMin), getMin(gbmcv_h0411), getMin(gbmcv_h0411fram),
+         sapply(gbmcv_d11r, getMin), getMin(gbmcv_d11), getMin(gbmcv_d11fram),
+         sapply(gbmcv_d04r, getMin), getMin(gbmcv_d04), getMin(gbmcv_d04fram),
+         sapply(gbmcv_d0411r, getMin), getMin(gbmcv_d0411), getMin(gbmcv_d0411fram)),
+  max=c(sapply(gbmcv_h11r, getMax), getMax(gbmcv_h11), getMax(gbmcv_h11fram),
+         sapply(gbmcv_h04r, getMax), getMax(gbmcv_h04), getMax(gbmcv_h04fram),
+         sapply(gbmcv_h0411r, getMax), getMax(gbmcv_h0411), getMax(gbmcv_h0411fram),
+         sapply(gbmcv_d11r, getMax), getMax(gbmcv_d11), getMax(gbmcv_d11fram),
+         sapply(gbmcv_d04r, getMax), getMax(gbmcv_d04), getMax(gbmcv_d04fram),
+         sapply(gbmcv_d0411r, getMax), getMax(gbmcv_d0411), getMax(gbmcv_d0411fram))
+)
+
+pdf("/mnt/DATA/Main/Spring 2015/998/Proj2/plots/gbm all cv.pdf")
+ggplot(gbm_plotdata, aes(y=AUC, x=Variables)) +
+  geom_point(size=3) +
+  geom_errorbar(aes(y=AUC, ymin=min, ymax=max)) +
+  facet_wrap(~resp) +
+  theme(strip.text=element_text(size=18),
+        axis.text=element_text(angle=90, color="black", size=12),
+        axis.title=element_text(size=12)) +
+  ylim(.4,.85)
+dev.off()
+
+# plotAucVar <- function(gbmcv_r, gbmcv, title) {
+#   aucmean <- sapply(gbmcv_r, function(x) mean(x[,"auc"]))
+#   aucmean <- c(aucmean, mean(gbmcv[,"auc"]))
+#   aucmax <- sapply(gbmcv_r, function(x) max(x[,"auc"]))
+#   aucmax <- c(aucmax, max(gbmcv[,"auc"]))
+#   aucmin <- sapply(gbmcv_r, function(x) min(x[,"auc"]))
+#   aucmin <- c(aucmin, min(gbmcv[,"auc"]))
+#   xvals <- c(1:10, 304)
+#   gap.plot(xvals, aucmean, gap=c(11,303), gap.axis="x", xlab="# Variables", ylab="AUC", main=title, 
+#            ylim=c(.5,.85), xtics=c(1:10,304), ytics=seq(.5,.8,.1))
+#   xbarvals <- c(1:10, 12)
+#   segments(xbarvals, aucmin, xbarvals, aucmax)
+#   segments(xbarvals-.2,aucmin,xbarvals+.2,aucmin)
+#   segments(xbarvals-.2,aucmax,xbarvals+.2,aucmax)
+# }
+
+# pdf("/mnt/DATA/Main/Spring 2015/998/Proj2/plots/gbm by varnum.pdf")
+# par(mfrow=c(3,2))
+# plotAucVar(gbmcv_h11r, gbmcv_h11, "HAC 2011")
+# plotAucVar(gbmcv_h04r, gbmcv_h04, "HAC 2004")
+# plotAucVar(gbmcv_h0411r, gbmcv_h0411, "HAC 2004-2011")
+# plotAucVar(gbmcv_d11r, gbmcv_d11, "doc 2011")
+# plotAucVar(gbmcv_d04r, gbmcv_d04, "doc 2004")
+# plotAucVar(gbmcv_d0411r, gbmcv_d0411, "doc 2004-2011")
+# dev.off()
+
+## gbm with Framingham
+# gbmcv_h11fram <- gbmCV(x[,framvar11], h11, folds_h11, tree_inc=1000, sh=.01)
+# gbmcv_h04fram <- gbmCV(x[,framvar04], h04, folds_h04, tree_inc=1000, sh=.01)
+# gbmcv_h0411fram <- gbmCV(x[,framvar04], h0411, folds_h0411, tree_inc=1000, sh=.01)
+# gbmcv_d11fram <- gbmCV(x[,framvar11], d11, folds_d11, tree_inc=1000, sh=.01)
+# gbmcv_d04fram <- gbmCV(x[,framvar04], d04, folds_d04, tree_inc=1000, sh=.01)
+# gbmcv_d0411fram <- gbmCV(x[,framvar04], d0411, folds_d0411, tree_inc=1000, sh=.01)
+# save(gbmcv_h11fram, gbmcv_h04fram, gbmcv_h0411fram, gbmcv_d11fram, gbmcv_d04fram, gbmcv_d0411fram, 
+#      file="/mnt/DATA/Main/Spring 2015/998/Proj2/models/gbmcvfram.rda")
+load("/mnt/DATA/Main/Spring 2015/998/Proj2/models/gbmcvfram.rda")
+gbmcv_h11fram
+gbmcv_h04fram
+gbmcv_h0411fram
+gbmcv_d11fram
+gbmcv_d04fram
+gbmcv_d0411fram
+```
+
+```{r, include=F}
+## tune gbm
+# source("/mnt/DATA/Main/Spring 2015/998/Proj2/gbmTune.R")
+# set.seed(4777729)
+# gbmtune <- gbmTune(x, h11, folds_h11, dist_ls=c("adaboost", "bernoulli"))
+# gbmtune_h11 <- gbmtune
+# gbmtune_h04 <- gbmTune(x04, h04, folds_h11, dist_ls=c("adaboost", "bernoulli"))
+# gbmtune_h0411 <- gbmTune(x04, h0411, folds_h11, dist_ls=c("adaboost", "bernoulli"))
+# gbmtune_d11 <- gbmTune(x, d11, folds_d11, dist_ls=c("adaboost", "bernoulli"))
+# gbmtune_d04 <- gbmTune(d04, d04, folds_h11, dist_ls=c("adaboost", "bernoulli"))
+# gbmtune_d0411 <- gbmTune(d04, d0411, folds_d11, dist_ls=c("adaboost", "bernoulli"))
+```
+
+
+```{r}
+## classification trees
+rpartPruneCV <- function(x, y, folds, split="gini", cp=0) {
+
+  dev <- function(p, y) -mean(ifelse(y==1, log(p), log(1-p)))
+  devmod <- function(p, y) dev(pmin(pmax(p, .001), .999), y)
+  mse <- function(p, y) mean((y-p)^2)
+  misclass <- function(p, y) mean(abs((p>.5)-y))
+  getAUC <- function(p, y) auc(y,p)
+
+  cv <- list()
+  for (i in 1:length(folds)) {
+    train_id <- Reduce(union, folds[-i])
+    test_id <- folds[[i]]
+    xtrain <- x[train_id,,drop=F]
+    ytrain <- y[train_id]
+    xtest <- x[test_id,,drop=F]
+    ytest <- y[test_id]
+    rpart_fit <- rpart(ytrain~., data=xtrain, method="class", parms=list(split=split),
+                     control=rpart.control(maxsurrogate=100, cp=cp))
+    cp_vals <- rpart_fit$cptable[,"CP"]
+    test_loss <- t(sapply(cp_vals, function(cp) {
+      rpart_prune <- prune.rpart(rpart_fit, cp=cp)
+      pred <- predict(rpart_prune, newdata=xtest)[,2]
+      dev <- dev(pred, ytest)
+      devmod <- devmod(pred, ytest)
+      mse <- mse(pred, ytest)
+      misclass <- misclass(pred, ytest)
+      auc <- getAUC(pred, ytest)
+      c(dev=dev, devmod=devmod, mse=mse, misclass=misclass, auc=auc)
+    }))
+    cv[[i]] <- cbind(cp_vals, test_loss)
+  }
+  cv
+}
+
+rpartCV <- function(x, y, folds, split="gini", cp=0, 
+                    cv_method=c("none","dev","devmod","mse","misclass","auc")) {
+  
+  getDev <- function(p, y) -mean(ifelse(y==1, log(p), log(1-p)))
+  getDevmod <- function(p, y) getDev(pmin(pmax(p, .001), .999), y)
+  getMse <- function(p, y) mean((y-p)^2)
+  getMisclass <- function(p, y) mean(abs((p>.5)-y))
+  getAUC <- function(p, y) auc(y,p)
+
+  cv <- matrix(nrow=length(folds), ncol=6)
+  for (i in 1:length(folds)) {
+    train_id <- Reduce(union, folds[-i])
+    test_id <- folds[[i]]
+    xtrain <- x[train_id,,drop=F]
+    ytrain <- y[train_id]
+    xtest <- x[test_id,,drop=F]
+    ytest <- y[test_id]
+    if (cv_method=="none") {
+      cp_best <- cp
+    } else {
+      folds_tune <- createFolds(1:length(ytrain), k = 5, list=T, returnTrain=F)
+      rpart_tune <- rpartPruneCV(xtrain, ytrain, folds_tune, split, cp)
+      cp_best <- mean(sapply(rpart_tune, function(x) x[which.max(x[,cv_method]),"cp_vals"]))
+    }
+    rpart_train <- rpart(ytrain~., data=xtrain, method="class", parms=list(split=split),
+                         control=rpart.control(maxsurrogate=100, cp=cp))
+    rpart_prune <- prune.rpart(rpart_train, cp=cp_best)
+    pred <- predict(rpart_prune, newdata=xtest)[,2]
+    dev <- getDev(pred, ytest)
+    devmod <- getDevmod(pred, ytest)
+    mse <- getMse(pred, ytest)
+    misclass <- getMisclass(pred, ytest)
+    auc1 <- getAUC(pred, ytest)
+    cv[i,] <- c(dev, devmod, mse, misclass, auc1, cp_best)
+  }
+  colnames(cv) <- c("dev","devmod","mse","misclass","auc","cp_best")
+  cv
+}
+
+# set.seed(8230981)
+# rpartcv_h11 <- rpartCV(x1, h11, folds_h11, split="gini", cp=-1, cv_method="auc")
+# rpartcv_h04 <- rpartCV(x104, h04, folds_h04, split="gini", cp=-1, cv_method="auc")
+# rpartcv_h0411 <- rpartCV(x104, h0411, folds_h0411, split="gini", cp=-1, cv_method="auc")
+# rpartcv_d11 <- rpartCV(x1, d11, folds_d11, split="gini", cp=-1, cv_method="auc")
+# rpartcv_d04 <- rpartCV(x104, d04, folds_d04, split="gini", cp=-1, cv_method="auc")
+# rpartcv_d0411 <- rpartCV(x104, d0411, folds_d0411, split="gini", cp=-1, cv_method="auc")
+# save(rpartcv_h11, rpartcv_h04, rpartcv_h0411, rpartcv_d11, rpartcv_d04, rpartcv_d0411, 
+#      file="/mnt/DATA/Main/Spring 2015/998/Proj2/models/rpartcv.rda")
+load("/mnt/DATA/Main/Spring 2015/998/Proj2/models/rpartcv.rda")
+rpartcv_h11
+rpartcv_h04
+rpartcv_h0411
+rpartcv_d11
+rpartcv_d04
+rpartcv_d0411
+
+## rpart for subset of variables
+# set.seed(3721605)
+# rpartcv_h11r <- lapply(1:10, function(num_var) {
+#   var <- as.character(summary(gbm_h11b)[1:num_var,1])
+#   rpartCV(x[,var,drop=F], h11, folds_h11, split="gini", cp=-1, cv_method="auc")
+# })
+# rpartcv_h04r <- lapply(1:10, function(num_var) {
+#   var <- as.character(summary(gbm_h04b)[1:num_var,1])
+#   rpartCV(x[,var,drop=F], h04, folds_h04, split="gini", cp=-1, cv_method="auc")
+# })
+# rpartcv_h0411r <- lapply(1:10, function(num_var) {
+#   var <- as.character(summary(gbm_h0411b)[1:num_var,1])
+#   rpartCV(x[,var,drop=F], h0411, folds_h0411, split="gini", cp=-1, cv_method="auc")
+# })
+# rpartcv_d11r <- lapply(1:10, function(num_var) {
+#   var <- as.character(summary(gbm_d11b)[1:num_var,1])
+#   rpartCV(x[,var,drop=F], d11, folds_d11, split="gini", cp=-1, cv_method="auc")
+# })
+# rpartcv_d04r <- lapply(1:10, function(num_var) {
+#   var <- as.character(summary(gbm_d04b)[1:num_var,1])
+#   rpartCV(x[,var,drop=F], d04, folds_d04, split="gini", cp=-1, cv_method="auc")
+# })
+# rpartcv_d0411r <- lapply(1:10, function(num_var) {
+#   var <- as.character(summary(gbm_d0411b)[1:num_var,1])
+#   rpartCV(x[,var,drop=F], d0411, folds_d0411, split="gini", cp=-1, cv_method="auc")
+# })
+# save(rpartcv_h11r, rpartcv_h04r, rpartcv_h0411r, rpartcv_d11r, rpartcv_d04r, rpartcv_d0411r, 
+#      file="/mnt/DATA/Main/Spring 2015/998/Proj2/models/rpartcvr.rda")
+load("/mnt/DATA/Main/Spring 2015/998/Proj2/models/rpartcvr.rda")
+rpartcv_h11r
+rpartcv_h04r
+rpartcv_h0411r
+rpartcv_d11r
+rpartcv_d04r
+rpartcv_d0411r
+
+# set.seed(2735056)
+# rpartcv_h11fram <- rpartCV(x[,framvar11], h11, folds_h11, split="gini", cp=-1, cv_method="auc")
+# rpartcv_h04fram <- rpartCV(x[,framvar04], h04, folds_h04, split="gini", cp=-1, cv_method="auc")
+# rpartcv_h0411fram <- rpartCV(x[,framvar04], h0411, folds_h0411, split="gini", cp=-1, cv_method="auc")
+# rpartcv_d11fram <- rpartCV(x[,framvar11], d11, folds_d11, split="gini", cp=-1, cv_method="auc")
+# rpartcv_d04fram <- rpartCV(x[,framvar04], d04, folds_d04, split="gini", cp=-1, cv_method="auc")
+# rpartcv_d0411fram <- rpartCV(x[,framvar04], d0411, folds_d0411, split="gini", cp=-1, cv_method="auc")
+# save(rpartcv_h11fram, rpartcv_h04fram, rpartcv_h0411fram, rpartcv_d11fram, rpartcv_d04fram, rpartcv_d0411fram, 
+#      file="/mnt/DATA/Main/Spring 2015/998/Proj2/models/rpartcvfram.rda")
+load("/mnt/DATA/Main/Spring 2015/998/Proj2/models/rpartcvfram.rda")
+rpartcv_h11fram
+rpartcv_h04fram
+rpartcv_h0411fram
+rpartcv_d11fram
+rpartcv_d04fram
+rpartcv_d0411fram
+
+## plot rpart cross validation results
+getMean <- function(x) mean(x[,"auc"])
+getMin <- function(x) min(x[,"auc"])
+getMax <- function(x) max(x[,"auc"])
+rpart_plotdata <- data.frame(
+  resp=factor(rep(c("HAC 2011","HAC 2004","HAC 2004-2011","doc 2011","doc 2004","doc 2004-2011"), each=12),
+              levels=c("HAC 2011","HAC 2004","HAC 2004-2011","doc 2011","doc 2004","doc 2004-2011")),
+  Variables=factor(rep(c(1:10,304,"Fram"), 6), levels=c(1:10,304,"Fram")),
+  AUC=c(sapply(rpartcv_h11r, getMean), getMean(rpartcv_h11), getMean(rpartcv_h11fram),
+         sapply(rpartcv_h04r, getMean), getMean(rpartcv_h04), getMean(rpartcv_h04fram),
+         sapply(rpartcv_h0411r, getMean), getMean(rpartcv_h0411), getMean(rpartcv_h0411fram),
+         sapply(rpartcv_d11r, getMean), getMean(rpartcv_d11), getMean(rpartcv_d11fram),
+         sapply(rpartcv_d04r, getMean), getMean(rpartcv_d04), getMean(rpartcv_d04fram),
+         sapply(rpartcv_d0411r, getMean), getMean(rpartcv_d0411), getMean(rpartcv_d0411fram)),  
+  min=c(sapply(rpartcv_h11r, getMin), getMin(rpartcv_h11), getMin(rpartcv_h11fram),
+         sapply(rpartcv_h04r, getMin), getMin(rpartcv_h04), getMin(rpartcv_h04fram),
+         sapply(rpartcv_h0411r, getMin), getMin(rpartcv_h0411), getMin(rpartcv_h0411fram),
+         sapply(rpartcv_d11r, getMin), getMin(rpartcv_d11), getMin(rpartcv_d11fram),
+         sapply(rpartcv_d04r, getMin), getMin(rpartcv_d04), getMin(rpartcv_d04fram),
+         sapply(rpartcv_d0411r, getMin), getMin(rpartcv_d0411), getMin(rpartcv_d0411fram)),
+  max=c(sapply(rpartcv_h11r, getMax), getMax(rpartcv_h11), getMax(rpartcv_h11fram),
+         sapply(rpartcv_h04r, getMax), getMax(rpartcv_h04), getMax(rpartcv_h04fram),
+         sapply(rpartcv_h0411r, getMax), getMax(rpartcv_h0411), getMax(rpartcv_h0411fram),
+         sapply(rpartcv_d11r, getMax), getMax(rpartcv_d11), getMax(rpartcv_d11fram),
+         sapply(rpartcv_d04r, getMax), getMax(rpartcv_d04), getMax(rpartcv_d04fram),
+         sapply(rpartcv_d0411r, getMax), getMax(rpartcv_d0411), getMax(rpartcv_d0411fram))
+)
+
+pdf("/mnt/DATA/Main/Spring 2015/998/Proj2/plots/rpart all cv.pdf")
+ggplot(rpart_plotdata, aes(y=AUC, x=Variables)) +
+  geom_point(size=3) +
+  geom_errorbar(aes(y=AUC, ymin=min, ymax=max)) +
+  facet_wrap(~resp) +
+  theme(strip.text=element_text(size=18),
+        axis.text=element_text(angle=90, color="black", size=12),
+        axis.title=element_text(size=12)) +
+  ylim(.4,.85)
+dev.off()
+
+# pdf("/mnt/DATA/Main/Spring 2015/998/Proj2/plots/rpart by varnum.pdf")
+# par(mfrow=c(3,2))
+# plotAucVar(rpartcv_h11r, rpartcv_h11, "HAC 2011")
+# plotAucVar(rpartcv_h04r, rpartcv_h04, "HAC 2004")
+# plotAucVar(rpartcv_h0411r, rpartcv_h0411, "HAC 2004-2011")
+# plotAucVar(rpartcv_d11r, rpartcv_d11, "doc 2011")
+# plotAucVar(rpartcv_d04r, rpartcv_d04, "doc 2004")
+# plotAucVar(rpartcv_d0411r, rpartcv_d0411, "doc 2004-2011")
+# dev.off()
+
+
+rpartcvtest_h11fram <- rpartPruneCV(x[,framvar11], h11, folds_h11, split="gini", cp=-1)
+rpartcvtest_h11framb <- rpartPruneCV(x[,framvar11b], h11, folds_h11, split="gini", cp=-1)
+rpartcvtest_h11framb
+# rpartcv_h11framb <- rpartCV(x[,framvar11b], h11, folds_h11, split="gini", cp=0, cv_method="auc")
+rpartcv_h11framb <- rpartCV(x[,framvar11b], h11, folds_h11, split="gini", cp=.0007, cv_method="none")
+rpartcv_h11framb
+rpart_h11framb <- rpart(h11~., data=x[,framvar11b], method="class", control=rpart.control(maxsurrogate=100, cp=0))
+cp_h11framb <- mean(rpartcv_h11framb[,"cp_best"])
+prp(prune.rpart(rpart_h11framb, cp=cp_h11framb), type=4, extra=7, tweak=2)
+# prp(prune.rpart(rpart_h11framb, cp=.0007), type=4, extra=7, tweak=1.5)
+
+
+rpartcv_h11 <- rpartPruneCV(x, h11, folds_h11, "gini")
+rpartcv_h11
+rpart_h11 <- rpart(h11~., data=x1, method="class", control=rpart.control(maxsurrogate=100, cp=-1))
+cp_h11 <- mean(sapply(rpartcv_h11, function(x) x[which.max(x[,"auc"]),"cp_vals"]))
+prp(prune.rpart(rpart_h11, cp=cp_h11), type=4, extra=7, tweak=3)
+
+var_h11 <- as.character(summary(gbm_h11b)[1:10,1])
+rpartcv_h11r <- rpartPruneCV(x[,var_h11], h11, folds_h11, "gini")
+rpartcv_h11r
+rpart_h11r <- rpart(h11~., data=x[,var_h11], method="class", control=rpart.control(maxsurrogate=100, cp=-1))
+cp_h11r <- mean(sapply(rpartcv_h11r, function(x) x[which.max(x[,"auc"]),"cp_vals"]))
+prp(prune.rpart(rpart_h11r, cp=cp_h11r), type=4, extra=7)
+
+framvar11 <- c("sex","age","highchol2011","smokever2011","diabetes2011","highbp2011")
+framvar04 <- c("sex","age","highchol2004","smokever2004","diabetes2004","highbp2004")
+rpartcv_h11fram <- rpartPruneCV(x[,framvar11], h11, folds_h11, "gini")
+rpartcv_h11fram
+rpart_h11fram <- rpart(h11~., data=x[,framvar11], method="class", control=rpart.control(maxsurrogate=100, cp=-1))
+prp(prune.rpart(rpart_h11fram, cp=.0001), type=4, extra=7)
+
+
+# rpartcv_h04 <- rpartPruneCV(x04, h04, folds_h04)
+# rpartcv_h0411 <- rpartPruneCV(x04, h0411, folds_h0411)
+# rpartcv_d11 <- rpartPruneCV(x, d11, folds_d11)
+# rpartcv_d04 <- rpartPruneCV(x04, d04, folds_d04)
+# rpartcv_d0411 <- rpartPruneCV(x04, d0411, folds_d0411)
+# save(rpartcv_h11, rpartcv_h04, rpartcv_h0411, rpartcv_d11, rpartcv_d04, rpartcv_d0411, 
+#      file="/mnt/DATA/Main/Spring 2015/998/Proj2/models/rpartcv.rda")
+load("/mnt/DATA/Main/Spring 2015/998/Proj2/models/rpartcv.rda")
+rpartcv_h11
+rpartcv_h04
+rpartcv_h0411 
+rpartcv_d11
+rpartcv_d04
+rpartcv_d0411
+
+
+# rpart_h11fram <- rpart(h11~., data=x[,framvar11], method="class", parms=list(split="gini"),
+#                       control=rpart.control(maxsurrogate=100, cp=-1)) 
+# rpart_h04fram <- rpart(h04~., data=x[,framvar04], method="class", parms=list(split="gini"),
+#                       control=rpart.control(maxsurrogate=100, cp=-1)) 
+# rpart_h0411fram <- rpart(h0411~., data=x[,framvar04], method="class", parms=list(split="gini"),
+#                       control=rpart.control(maxsurrogate=100, cp=-1)) 
+# rpart_d11fram <- rpart(d11~., data=x[,framvar11], method="class", parms=list(split="gini"),
+#                       control=rpart.control(maxsurrogate=100, cp=-1)) 
+# rpart_d04fram <- rpart(d04~., data=x[,framvar04], method="class", parms=list(split="gini"),
+#                       control=rpart.control(maxsurrogate=100, cp=-1)) 
+# rpart_d0411fram <- rpart(d0411~., data=x[,framvar04], method="class", parms=list(split="gini"),
+#                       control=rpart.control(maxsurrogate=100, cp=-1)) 
+# save(rpart_h11fram, rpart_h04fram, rpart_h0411fram, rpart_d11fram, rpart_d04fram, rpart_d0411fram, 
+#      file="/mnt/DATA/Main/Spring 2015/998/Proj2/models/rpartfram.rda")
+load("/mnt/DATA/Main/Spring 2015/998/Proj2/models/rpartfram.rda")
+
+cp_h11 <- mean(rpartcv_h11fram[,"cp_best"])
+cp_h04 <- mean(rpartcv_h04fram[,"cp_best"])
+cp_h0411 <- mean(rpartcv_h0411fram[,"cp_best"])
+cp_d11 <- mean(rpartcv_d11fram[,"cp_best"])
+cp_d04 <- mean(rpartcv_d04fram[,"cp_best"])
+cp_d0411 <- mean(rpartcv_d0411fram[,"cp_best"])
+
+pdf("/mnt/DATA/Main/Spring 2015/998/Proj2/plots/rpart_h11fram.pdf")
+prp(prune.rpart(rpart_h11fram, cp_h11), extra=7, tweak=2, type=1)
+dev.off()
+prp(update(rpart_h11fram, control=rpart.control(maxdepth=5, maxsurrogate=100, cp=-1)), extra=7, tweak=2, type=1)
+test <- rpart(h11~., data=x[,framvar11], method="class", parms=list(split="gini"),
+    control=rpart.control(maxdepth=4, maxsurrogate=100, cp=-1))
+pdf("/mnt/DATA/Main/Spring 2015/998/Proj2/plots/rpart_h11fram_trim.pdf")
+prp(test, extra=7, type=4, tweak=1)
+dev.off()
+prp(prune.rpart(rpart_h04fram, cp_h04), extra=7, tweak=3, type=1)
+prp(prune.rpart(rpart_h0411fram, cp_h0411), extra=7, tweak=3, type=1)
+prp(prune.rpart(rpart_d11fram, cp_d11), extra=7, tweak=3, type=1)
+prp(prune.rpart(rpart_d04fram, cp_d04), extra=7, tweak=3, type=1)
+prp(prune.rpart(rpart_d0411fram, cp_d0411), extra=7, tweak=3, type=1)
+
+```
+
+```{r}
+nullCV <- function(x, y, folds) {
+
+  dev <- function(p, y) -mean(ifelse(y==1, log(p), log(1-p)))
+  devmod <- function(p, y) dev(pmax(p, .001), y)
+  mse <- function(p, y) mean((y-p)^2)
+  misclass <- function(p, y) mean(abs((p>.5)-y))
+  getAUC <- function(p, y) auc(y, p)
+
+  cv <- matrix(nrow=length(folds), ncol=5)
+  for (i in 1:length(folds)) {
+    train_id <- Reduce(union, folds[-i])
+    test_id <- folds[[i]]
+    xtrain <- x[train_id,]
+    ytrain <- y[train_id]
+    xtest <- x[test_id,]
+    ytest <- y[test_id]
+    pred <- rep(mean(ytrain), length(ytest))
+    test_loss <- t(sapply(1, function(i) {
+      dev <- dev(pred, ytest)
+      devmod <- devmod(pred, ytest)
+      mse <- mse(pred, ytest)
+      misclass <- misclass(pred, ytest)
+      auc <- getAUC(pred, ytest)
+      c(dev=dev, devmod=devmod, mse=mse, misclass=misclass, auc=auc)
+    }))
+    cv[i,] <- test_loss
+  }
+  colnames(cv) <- colnames(test_loss)
+  cv
+}
+nullcv_h11 <- nullCV(x, h11, folds_h11)
+nullcv_h04 <- nullCV(x04, h04, folds_h04)
+nullcv_h0411 <- nullCV(x04, h0411, folds_h0411)
+nullcv_d11 <- nullCV(x, d11, folds_d11)
+nullcv_d04 <- nullCV(x04, d04, folds_d04)
+nullcv_d0411 <- nullCV(x04, d0411, folds_d0411)
+nullcv_h11
+nullcv_h04
+nullcv_h0411
+nullcv_d11
+nullcv_d04
+nullcv_d0411
+```
+
+```{r}
+# lassoCV <- function(x, y, folds) {
+# recover()  
+#   for (i in which(apply(x, 2, function(x) sum(is.na(x))>0))) {
+#     if (is.factor(x[,i])) {
+#       lev <- attr(x[,i], "levels")
+#       ct <- sapply(lev, function(l) sum(x[,i]==l))
+#       most_common <- lev[which.max(ct)]
+#       x[is.na(x[,i]),i] <- most_common
+#     } else {
+#       x[is.na(x[,i]),i] <- mean(x[,i], na.rm=T)
+#     }
+#   }
+# 
+#   dev <- function(p, y) -mean(ifelse(y==1, log(p), log(1-p)))
+#   devmod <- function(p, y) dev(pmax(p, .001), y)
+#   mse <- function(p, y) mean((y-p)^2)
+#   misclass <- function(p, y) mean(abs((p>.5)-y))
+# 
+#   cv <- matrix(nrow=length(folds), ncol=4)
+#   for (i in 1:length(folds)) {
+#     train_id <- Reduce(union, folds[-i])
+#     test_id <- folds[[i]]
+#     xtrain <- x[train_id,]
+#     ytrain <- y[train_id]
+#     xtest <- x[test_id,]
+#     ytest <- y[test_id]
+#     lr_fit <- glmnet(xtrain, ytrain, family="binomial")
+#     pred <- mean(ytrain)
+#     test_loss <- t(sapply(1, function(i) {
+#       dev <- dev(pred, ytest)
+#       devmod <- devmod(pred, ytest)
+#       mse <- mse(pred, ytest)
+#       misclass <- misclass(pred, ytest)
+#       c(dev=dev, devmod=devmod, mse=mse, misclass=misclass)
+#     }))
+#     cv[i,] <- test_loss
+#   }
+#   colnames(cv) <- colnames(test_loss)
+#   cv
+# }
+# lassocv_h11 <- lassoCV(x, h11, folds_h11)
+# nullcv_h04 <- nullCV(x04, h04, folds_h04)
+# nullcv_h0411 <- nullCV(x04, h0411, folds_h0411)
+# nullcv_d11 <- nullCV(x, d11, folds_d11)
+# nullcv_d04 <- nullCV(x04, d04, folds_d04)
+# nullcv_d0411 <- nullCV(x04, d0411, folds_d0411)
+# nullcv_h11
+# nullcv_h04
+# nullcv_h0411
+# nullcv_d11
+# nullcv_d04
+# nullcv_d0411
+
+```{r}
+## univariate logistic regression for each covariate
+# p <- vector()
+# for (i in 1:ncol(dat)) {
+#   x <- dat[,i]
+#   lr <- glm(doc2011~x, data=dat, family=binomial)
+#   p[i] <- summary(lr)$coef[2,4]
+# }
+# mean(p<.05)
+# 
+# 
+# head(x$diabdiag2004)
+# head(x$diabetes2004)
+# sum(is.na(x$diabdiag2004) & x$diabetes2004=="No", na.rm=T)

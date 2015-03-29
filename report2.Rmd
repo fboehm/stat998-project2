@@ -206,7 +206,9 @@ subdivide <- function(data = wls, indicator = sex)
 
 
 ```{r fivefoldcv}
-
+df_in <- with(wls, data.frame(sex, age, highchol2011, smokever2011, diabetes2011, highbp2011))
+source("glmcv.R")
+glmcv(x=df_in, y=wls$HAC2011)
 ```
 
 ## Results
