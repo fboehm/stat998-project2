@@ -2,7 +2,7 @@
 title: Identifying myocardial infarction risk factors in the Wisconsin Longitudinal
   Survey
 author: "Fred Boehm, Statistics 998"
-date: "March 26, 2015"
+date: "March 31, 2015"
 output: 
   pdf_document:
     fig_caption: yes
@@ -224,6 +224,13 @@ glmcv(x=df_in, y=wls$HAC2011)
 
 ## Future directions
 
+We would like to investigate other tree-based methods, including those developed by Wei-Yin Loh. The absence of R implementations of Loh's algorithms prevented us from including them in our current analysis. We are currently in the process of writing code to implement Loh's algorithms in R, but they are not yet ready for use. 
+
+\todo[inline]{explain why we want Loh's algorithms. Might mention why they could be useful in this project.}
+
+A major reason for using Loh's algorithms is their unbiasedness [@loh2011classification]
+
+
 Given the relatively low cost of acquiring genomics data, one possible future direction is to acquire genomics data for a subset of study subjects. For example, SNP genotype data from each subject may enable us to further discriminate those subjects that are at high risk for a CAD event. Such knowledge may be translated into the proposed intervention program, for example, by promoting healthy diet and physical activity among those at greatest risk. 
 
 
@@ -238,6 +245,33 @@ Given the relatively low cost of acquiring genomics data, one possible future di
 
 ## Appendix B: Questions for client
 
+1. What do you intend to do with results from this study?
+
+2. How important is prediction of future MI to your scientific goals?  There may be a tradeoff between prediction and the ability to quantify variable effects (for example does smoking increase or decrease risk?  By how much?  Does the effect vary across population subgroups?).
+
+3. Why are there so many missing values (NA) for the HA2011 & HA2004 variables? Did these subjects not respond to that question? Did they respond to the survey at all? 
+
+4. Which variables do you think are the most meaningful?
+
+5. Is incidence of MI between 2004 and 2011 a meaningful outcome? We could try to ascertain who had a MI during that interval (from among the people who had no MI history in 2004)
+
+6. We’re considering focusing on established risk factors such as those that the Framingham study identified. Is this reasonable? Or do you want to try to identify novel risk factors? 
+
+7. Are the "created" variables HAC2011 and HAC2004 better than the unadjusted versions?  Is there any reason to do separate analyses for 2011 and 2004?  Could we just code “yes” for a yes in any year, otherwise use 2011 value.  
+Why do some responses switch from “yes” in 2004 to “no” in 2011—is this because the question specifically refers to heart attacks or diagnoses within the last 20 years?
+
+8. Should any conditions be excluded as covariates because they can occur concurrently with heart disease (e.g. diabetes, stroke, high blood pressure, high cholesterol)?  In other words, is there more interest in leading indicators?
+
+9. Is there interest in separating the effects of covariates gathered in multiple years (e.g. highchol2004, highchol2011)?  Should these be combined into a single measure?  Should 2011 effect be excluded when modeling a 2004 response?
+
+9. I noticed some ordinal variables (e.g. education level) are coded as integers.  Is this consistent for all ordinal variables?  Are there any non-ordinal categorical variables coded as integers?
+
+
+
+
+
+
+
 
 \newpage
 
@@ -248,7 +282,7 @@ Given the relatively low cost of acquiring genomics data, one possible future di
 
 ## Appendix D: Additional note  
 
-Throughout this report, we tried to adhere to the style suggested by @leek2015. We used the R statistical environment for all calculations[@r2015]. 
+Throughout this report, we tried to adhere to the style suggested by @leek2015. We used the R statistical environment for all calculations[@r2015]. Mike Wurm performed the tree-based analysis, and the code for that part is nearly identical to his. The R packages gbm [@gbm], pROC [@pROC] and rpart [@rpart] played central roles in our analyses.
 
 
 ## References

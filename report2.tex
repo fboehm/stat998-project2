@@ -71,7 +71,7 @@ Longitudinal Survey}
   \postauthor{\par}
   \predate{\centering\large\emph}
   \postdate{\par}
-  \date{March 26, 2015}
+  \date{March 31, 2015}
 
 
 \usepackage[hypcap]{caption}
@@ -218,26 +218,30 @@ transformed the fitted logit values to probabilities before plotting a
 receiver operating characteristic (ROC) curve for each model, in which
 we use the fitted probabilities to examine the trade-off between
 specificity and sensitivity. We also calculated the area under the curve
-(AUC) for each ROC curve.\footnote{Robin et al., ``pROC.'' }
+(AUC) for each ROC curve.\footnote{Robin et al., ``PROC.'' }
 
 \begin{figure}[htbp]
 \centering
 \includegraphics{report2_files/figure-latex/plot-hac2011-1.pdf}
+\caption{}
 \end{figure}
 
 \begin{figure}[htbp]
 \centering
 \includegraphics{report2_files/figure-latex/plot-doc2011-1.pdf}
+\caption{}
 \end{figure}
 
 \begin{figure}[htbp]
 \centering
 \includegraphics{report2_files/figure-latex/plot-hac2004-1.pdf}
+\caption{}
 \end{figure}
 
 \begin{figure}[htbp]
 \centering
 \includegraphics{report2_files/figure-latex/plot-doc2004-1.pdf}
+\caption{}
 \end{figure}
 
 \subsubsection{Subgroup-specific
@@ -256,6 +260,7 @@ modeling}\label{subgroup-specific-modeling}
 \begin{figure}[htbp]
 \centering
 \includegraphics{report2_files/figure-latex/subdivide-diabetes2004-1.pdf}
+\caption{}
 \end{figure}
 
 \subsection{Results}\label{results}
@@ -263,6 +268,17 @@ modeling}\label{subgroup-specific-modeling}
 \subsection{Discussion}\label{discussion}
 
 \subsection{Future directions}\label{future-directions}
+
+We would like to investigate other tree-based methods, including those
+developed by Wei-Yin Loh. The absence of R implementations of Loh's
+algorithms prevented us from including them in our current analysis. We
+are currently in the process of writing code to implement Loh's
+algorithms in R, but they are not yet ready for use.
+
+\todo[inline]{explain why we want Loh's algorithms. Might mention why they could be useful in this project.}
+
+A major reason for using Loh's algorithms is their
+unbiasedness\footnote{Loh, ``Classification and Regression Trees.'' }
 
 Given the relatively low cost of acquiring genomics data, one possible
 future direction is to acquire genomics data for a subset of study
@@ -282,6 +298,65 @@ materials}\label{appendix-a-supplementary-materials}
 \subsection{Appendix B: Questions for
 client}\label{appendix-b-questions-for-client}
 
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\item
+  What do you intend to do with results from this study?
+\item
+  How important is prediction of future MI to your scientific goals?
+  There may be a tradeoff between prediction and the ability to quantify
+  variable effects (for example does smoking increase or decrease risk?
+  By how much? Does the effect vary across population subgroups?).
+\item
+  Why are there so many missing values (NA) for the HA2011 \& HA2004
+  variables? Did these subjects not respond to that question? Did they
+  respond to the survey at all?
+\item
+  Which variables do you think are the most meaningful?
+\item
+  Is incidence of MI between 2004 and 2011 a meaningful outcome? We
+  could try to ascertain who had a MI during that interval (from among
+  the people who had no MI history in 2004)
+\item
+  We're considering focusing on established risk factors such as those
+  that the Framingham study identified. Is this reasonable? Or do you
+  want to try to identify novel risk factors?
+\item
+  Are the ``created'' variables HAC2011 and HAC2004 better than the
+  unadjusted versions? Is there any reason to do separate analyses for
+  2011 and 2004? Could we just code ``yes'' for a yes in any year,
+  otherwise use 2011 value.\\Why do some responses switch from ``yes''
+  in 2004 to ``no'' in 2011---is this because the question specifically
+  refers to heart attacks or diagnoses within the last 20 years?
+\item
+  Should any conditions be excluded as covariates because they can occur
+  concurrently with heart disease (e.g.~diabetes, stroke, high blood
+  pressure, high cholesterol)? In other words, is there more interest in
+  leading indicators?
+\item
+  Is there interest in separating the effects of covariates gathered in
+  multiple years (e.g.~highchol2004, highchol2011)? Should these be
+  combined into a single measure? Should 2011 effect be excluded when
+  modeling a 2004 response?
+\item
+  I noticed some ordinal variables (e.g.~education level) are coded as
+  integers. Is this consistent for all ordinal variables? Are there any
+  non-ordinal categorical variables coded as integers?
+\end{enumerate}
+
+Observation counts:
+
+HAC11\textbar{} 0 \textbar{} 1 \textbar{}
+NA\\-----\textbar{}------\textbar{}-----\textbar{}------\\0 \textbar{}
+7989 \textbar{} 63 \textbar{} 556\\ 1 \textbar{} 316 \textbar{} 379
+\textbar{} 60\\ NA \textbar{} 2564 \textbar{} 223 \textbar{} 6945
+
+\begin{verbatim}
+  doc04
+\end{verbatim}
+
+doc11 0 1 0 6460 170 475 1 1032 1064 145 2300 496 6953
+
 \newpage
 
 \subsection{Appendix C: Computing code}\label{appendix-c-computing-code}
@@ -292,9 +367,13 @@ client}\label{appendix-b-questions-for-client}
 note}\label{appendix-d-additional-note}
 
 Throughout this report, we tried to adhere to the style suggested by
-Leek\footnote{\emph{The Elements of Data Analytic Style}.}. We used the
+Leek.\footnote{\emph{The Elements of Data Analytic Style}.} We used the
 R statistical environment for all calculations\footnote{R Core Team,
-  \emph{R}. }.
+  \emph{R}. }. Mike Wurm performed the tree-based analysis, and the code
+for that part is nearly identical to his. The R packages gbm,\footnote{Others,
+  \emph{Gbm}. } pROC\footnote{Robin et al., ``PROC.'' } and
+rpart\footnote{Therneau, Atkinson, and Ripley, \emph{Rpart}. } played
+central roles in our analyses.
 
 \subsection*{References}\label{references}
 \addcontentsline{toc}{subsection}{References}
@@ -307,20 +386,32 @@ Study.'' \emph{Circulation} 117, no. 6 (2008): 743--53.
 Leek, Jeff. \emph{The Elements of Data Analytic Style}. Leanpub,
 2015Available at \url{https://leanpub.com/datastyle}.
 
+Loh, Wei-Yin. ``Classification and Regression Trees.'' \emph{Wiley
+Interdisciplinary Reviews: Data Mining and Knowledge Discovery} 1, no. 1
+(2011): 14--23.
+
 Mozaffarian, Dariush, Emelia J Benjamin, Alan S Go, Donna K Arnett,
 Michael J Blaha, Mary Cushman, Sarah de Ferranti, et al. ``Executive
 Summary: Heart Disease and Stroke Statistics---2015 Update a Report from
 the American Heart Association.'' \emph{Circulation} 131, no. 4 (2015):
 434--41.
 
+others, Greg Ridgeway with contributions from. \emph{Gbm: Generalized
+Boosted Regression Models}, 2015.
+\url{http://CRAN.R-project.org/package=gbm}R package version 2.1.1.
+
 R Core Team. \emph{R: A Language and Environment for Statistical
 Computing}. Vienna, Austria: R Foundation for Statistical Computing,
 2015. \url{http://www.R-project.org/}.
 
 Robin, Xavier, Natacha Turck, Alexandre Hainard, Natalia Tiberti,
-Frédérique Lisacek, Jean-Charles Sanchez, and Markus Müller. ``pROC: an
+Frédérique Lisacek, Jean-Charles Sanchez, and Markus Müller. ``PROC: An
 Open-Source Package for R and S+ to Analyze and Compare ROC Curves.''
 \emph{BMC Bioinformatics} 12 (2011): 77.
+
+Therneau, Terry, Beth Atkinson, and Brian Ripley. \emph{Rpart: Recursive
+Partitioning and Regression Trees}, 2015.
+\url{http://CRAN.R-project.org/package=rpart}R package version 4.1-9.
 
 ``Wisconsin Longitudinal Study''.
 \url{http://www.ssc.wisc.edu/wlsresearch/}, 2015Accessed on
