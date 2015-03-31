@@ -24,6 +24,29 @@
 \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
 }{}
 \usepackage[margin=2cm]{geometry}
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{{#1}}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{{#1}}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{{#1}}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{{#1}}}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{{#1}}}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{{#1}}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{{#1}}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{{#1}}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{{#1}}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{{#1}}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{{#1}}}
+\newcommand{\RegionMarkerTok}[1]{{#1}}
+\newcommand{\ErrorTok}[1]{\textbf{{#1}}}
+\newcommand{\NormalTok}[1]{{#1}}
 \usepackage{graphicx}
 \makeatletter
 \def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
@@ -145,12 +168,18 @@ sibling in 1977, 1994, 2005, and 2011; from the spouse of the original
 respondent in 2004; from the spouse of the selected sibling in 2006; and
 from widow(er)s of the graduates and siblings in 2006.
 
+While the WLS's original purpose didn't focus on cardiovascular health,
+we feel that the richness of the survey data provide a unique
+opportunity to identify CAD risk factors for the purpose of informing
+intervention program design.
+
 \subsection{Data description}\label{data-description}
 
 Our collaborators shared with us a data set that contains records for
 19095 individuals (including original subjects and siblings) with 310
 variables per subject. 9363 subjects responded (with yes or no) to the
 2011 question of whether they had ever had a heart attack.
+\todo[inline]{need to elaborate on data description here.}
 
 \subsection{Exploratory data analyses}\label{exploratory-data-analyses}
 
@@ -161,7 +190,8 @@ doc2004, docinc) and covariates that other researchers have identified
 as associated with coronary artery disease.
 
 Age is known, from epidemiologic studies, to be a strong risk factor for
-CAD, with older individuals having an elevated CAD risk.
+CAD, with older individuals having an elevated CAD risk. We thus
+examined correlations between the outcome variables and age.
 
 \todo[inline, color = green]{what to explore for categorical data? Only the proportion in each category????}
 
@@ -173,7 +203,11 @@ DOC2004, 4) DOC2011, 5) new self-reported heart attacks (from 2004 to
 2011) and 6) new heart attack per doctor's report (from 2004 to 2011).
 For a subject to qualify as a ``new'' self-reported heart attack, they
 must have responded ``No'' in 2004 and ``Yes'' in 2011. Analogous
-definition applies for ``new'' doctor-reported heart attack.
+definition applies for ``new'' doctor-reported heart attack. We also
+noted that some subjects responded in an inconsistent manner, with
+HAC2004 being yes, but HAC2011 being no. Despite this, we treated the
+data as though there were no mistaken responses and didn't exclude
+subjects based on apparent inconsistencies.
 
 We found that HAC2004 had 11534 non-missing responders (with 665
 responding ``Yes'' and 10869 responding ``No''). Counts for other
@@ -183,7 +217,7 @@ variables are provided in Appendix A.
 predictors}\label{statistical-modeling-with-framingham-study-predictors}
 
 \begin{table}
-\begin{tabular}{l r}\label{tab:fram2wls}
+\begin{tabular}{l r}
 Framingham study variable & WLS Variable\\
 \hline
 Sex & Sex\\
@@ -197,6 +231,7 @@ Treated for high blood pressure & None\\
 \hline
 \end{tabular}
 \caption{Framingham study variables and their closest analogs in WLS. (* SBP not available, so we used reported "high BP".)}
+\label{tab:fram2wls}
 \end{table}
 
 We identified those variables in the WLS that closely match those in the
@@ -256,9 +291,65 @@ characteristic (ROC) curve and evaluated the area under the curve using
 the pROC R package.\footnote{Ibid. }
 
 A ROC curve is a plot of sensitivity against specificity. We created the
-ROC curve by varying the threshold cut point for our classifier and
-seeing how distinct cut points impact our specificity and sensitivity as
-measured on the test set.
+ROC curve (\textasciitilde{}\ref{figure:roc})
+\todo[inline]{add label to figure with ROC curve, after the caption for that figure.}
+by varying the threshold cut point for our classifier and seeing how
+distinct cut points impact our specificity and sensitivity as measured
+on the test set.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics{from-mike/gbm-all-cv.pdf}
+\caption{Comparing AUCs for GBM-based analyses.}
+\label{figure:auc1}
+\end{figure}
+
+We used gradient boosting models, as implemented in the R package gbm,
+to identify the most important variables for each outcome. We noted that
+these covariates differed by outcome variable. We fit models that
+consisted of the top one, top two, top three, etc. covariates for each
+of our outcome variables. We performed five-fold cross-validation to get
+the AUC from the ROC curves. For example, in Figure \ref{figure:auc1},
+we have plotted the mean of the five AUCs for each model (with each of
+the six outcome variables). Consider the upper left plot, which displays
+the AUCs for the models with outcome variable HAC2011. On the vertical
+axis, we have AUC; number of variables in the model is plotted on the
+x-axis. The leftmost point represents the mean AUC when we use only the
+most important variable (for the HAC2011 outcome). The error bars extend
+to the maximum and minimum of the five AUCs for this model. The point
+with x=2 is the mean AUC for the model with the two most important
+variables for HAC2011 outcome. Note that the first eleven models in this
+figure are nested. The last model on the upper left plot (all the way to
+the righthand side of the plot) is that obtained by using the six
+Framingham covariates. We created the other five plots in
+\ref{figure:auc1} in an analogous fashion, by examining the most
+important covariates for each outcome variable.
+
+We also investigated the role of tree pruning in single-tree models. An
+important advantage of the CART algorithm, as implemented in the R
+packages rpart, is that we have a more interpretable result, a single
+tree, rather than the ensemble product of the GBM algorithm.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics{from-mike/rpartcv_cp.pdf}
+\caption{Comparing AUCs for CART-based analyses, based on CART complexity parameter.}
+\label{figure:auc-cp}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics{from-mike/rpartcv_dev.pdf}
+\caption{Comparing AUCs for CART-based analyses, based on deviance criterion.}
+\label{figure:auc-dev}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics{from-mike/rpartcv_minsplit.pdf}
+\caption{Comparing AUCs for CART-based analyses, based on min-split criterion.}
+\label{figure:auc-ms}
+\end{figure}
 
 \subsection{Discussion}\label{discussion}
 
@@ -352,6 +443,830 @@ client}\label{appendix-b-questions-for-client}
 \newpage
 
 \subsection{Appendix C: Computing code}\label{appendix-c-computing-code}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{## ----"setup", echo=FALSE-------------------------------------------------}
+\KeywordTok{rm}\NormalTok{(}\DataTypeTok{list=}\KeywordTok{ls}\NormalTok{())}
+
+\KeywordTok{library}\NormalTok{(knitr)}
+\NormalTok{opts_chunk$}\KeywordTok{set}\NormalTok{(}\DataTypeTok{cache=}\OtherTok{FALSE}\NormalTok{, }\DataTypeTok{echo=}\OtherTok{FALSE}\NormalTok{, }\DataTypeTok{results=} \StringTok{'hide'}\NormalTok{, }\DataTypeTok{message =} \OtherTok{FALSE}\NormalTok{, }\DataTypeTok{warning=}\OtherTok{FALSE}\NormalTok{, }\DataTypeTok{tidy=}\OtherTok{TRUE}\NormalTok{, }\DataTypeTok{highlight=}\OtherTok{TRUE}\NormalTok{, }\DataTypeTok{fig.show=}\StringTok{'asis'}\NormalTok{)}
+
+
+\NormalTok{## ----"readdat"-----------------------------------------------------------}
+\KeywordTok{library}\NormalTok{(tidyr)}
+\KeywordTok{library}\NormalTok{(dplyr)}
+\KeywordTok{library}\NormalTok{(stringr)}
+\KeywordTok{library}\NormalTok{(lubridate)}
+\KeywordTok{library}\NormalTok{(ggplot2)}
+\KeywordTok{library}\NormalTok{(gbm)}
+\NormalTok{wls<-}\StringTok{ }\KeywordTok{tbl_df}\NormalTok{(}\KeywordTok{read.csv}\NormalTok{(}\StringTok{"WLS2.csv"}\NormalTok{))}
+
+
+\NormalTok{## ----HAC2011responders---------------------------------------------------}
+\NormalTok{wls_ha2011responders <-}\StringTok{ }\NormalTok{wls[!}\KeywordTok{is.na}\NormalTok{(wls$HAC2011),]}
+
+
+
+\NormalTok{## ----logistic_framingham-------------------------------------------------}
+
+\NormalTok{glm_wrap<-}\StringTok{ }\NormalTok{function(formula, }\DataTypeTok{data=} \NormalTok{wls, }\DataTypeTok{family=}\StringTok{"binomial"}
+                    \NormalTok{)}
+    \NormalTok{\{}
+    \NormalTok{mylogit <-}\StringTok{ }\KeywordTok{glm}\NormalTok{(formula, }\DataTypeTok{data =} \NormalTok{data, }\DataTypeTok{family =} \NormalTok{family)}
+    \CommentTok{# convert logits to probabilities}
+    \NormalTok{pred_prob <-}\StringTok{ }\KeywordTok{expit}\NormalTok{(}\KeywordTok{predict}\NormalTok{(mylogit))}
+    \NormalTok{df<-}\StringTok{ }\KeywordTok{data.frame}\NormalTok{(mylogit$model[,}\DecValTok{1}\NormalTok{], pred_prob)}
+    \KeywordTok{names}\NormalTok{(df)<-}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{"outcome"}\NormalTok{, }\StringTok{"predicted_probability"}\NormalTok{) }
+    \KeywordTok{return}\NormalTok{(df)}
+    \NormalTok{\}}
+     
+     \NormalTok{expit <-}\StringTok{ }\NormalTok{function(l)}
+  \NormalTok{\{}
+  \KeywordTok{exp}\NormalTok{(l)/(}\DecValTok{1}\NormalTok{+}\KeywordTok{exp}\NormalTok{(l))}
+  \NormalTok{\}}
+\NormalTok{pp_df<-}\StringTok{ }\KeywordTok{glm_wrap}\NormalTok{(HAC2011 ~}\StringTok{ }\NormalTok{sex +}\StringTok{ }\NormalTok{age +}\StringTok{ }\NormalTok{highchol2011 +}\StringTok{ }\NormalTok{smokever2011 +}\StringTok{ }\NormalTok{diabetes2011 +}\StringTok{ }\NormalTok{highbp2011)}
+
+
+\NormalTok{## ----pROC----------------------------------------------------------------}
+\KeywordTok{library}\NormalTok{(pROC)}
+
+\NormalTok{plot.roc_wrap <-}\StringTok{ }\NormalTok{function(out_df }\CommentTok{# a dataframe outputted from glm_wrap()}
+                          \NormalTok{)}
+    \NormalTok{\{}
+    \KeywordTok{plot.roc}\NormalTok{(out_df$outcome, out_df$predicted_probability, }\DataTypeTok{print.auc=}\OtherTok{TRUE}\NormalTok{, }\DataTypeTok{ci=}\OtherTok{FALSE}\NormalTok{)}
+    \NormalTok{\}}
+
+
+
+\NormalTok{## ----plot-hac2011, fig.cap= "Receiver operating characteristic curve for the logistic regression model with outcome HAC2011 and the six Framingham covariates."----}
+\KeywordTok{plot.roc_wrap}\NormalTok{(}\KeywordTok{glm_wrap}\NormalTok{(HAC2011 ~}\StringTok{ }\NormalTok{sex +}\StringTok{ }\NormalTok{age +}\StringTok{ }\NormalTok{highchol2011 +}\StringTok{ }\NormalTok{smokever2011 +}\StringTok{ }\NormalTok{diabetes2011 +}\StringTok{ }\NormalTok{highbp2011))}
+
+
+\NormalTok{## ----plot-doc2011, fig.show='hide'---------------------------------------}
+\KeywordTok{plot.roc_wrap}\NormalTok{(}\KeywordTok{glm_wrap}\NormalTok{(doc2011 ~}\StringTok{ }\NormalTok{sex +}\StringTok{ }\NormalTok{age +}\StringTok{ }\NormalTok{highchol2011 +}\StringTok{ }\NormalTok{smokever2011 +}\StringTok{ }\NormalTok{diabetes2011 +}\StringTok{ }\NormalTok{highbp2011))}
+
+
+\NormalTok{## ----plot-hac2004, fig.show='hide'---------------------------------------}
+\KeywordTok{plot.roc_wrap}\NormalTok{(}\KeywordTok{glm_wrap}\NormalTok{(HAC2004 ~}\StringTok{ }\NormalTok{sex +}\StringTok{ }\NormalTok{age +}\StringTok{ }\NormalTok{highchol2011 +}\StringTok{ }\NormalTok{smokever2011 +}\StringTok{ }\NormalTok{diabetes2011 +}\StringTok{ }\NormalTok{highbp2011))}
+
+
+\NormalTok{## ----plot-doc2004, fig.show='hide'---------------------------------------}
+\KeywordTok{plot.roc_wrap}\NormalTok{(}\KeywordTok{glm_wrap}\NormalTok{(doc2004 ~}\StringTok{ }\NormalTok{sex +}\StringTok{ }\NormalTok{age +}\StringTok{ }\NormalTok{highchol2011 +}\StringTok{ }\NormalTok{smokever2011 +}\StringTok{ }\NormalTok{diabetes2011 +}\StringTok{ }\NormalTok{highbp2011))}
+
+
+
+\NormalTok{## ----subdivide_sex-------------------------------------------------------}
+\NormalTok{wls_fem<-}\StringTok{ }\NormalTok{wls[wls$sex ==}\StringTok{ "Female"}\NormalTok{,]}
+\NormalTok{wls_mal<-}\StringTok{ }\NormalTok{wls[wls$sex ==}\StringTok{ "Male"}\NormalTok{,]}
+
+
+\NormalTok{## ----plot-hac2011-males, fig.show='hide'---------------------------------}
+\KeywordTok{plot.roc_wrap}\NormalTok{(}\KeywordTok{glm_wrap}\NormalTok{(HAC2011 ~}\StringTok{ }\NormalTok{age +}\StringTok{ }\NormalTok{highchol2011 +}\StringTok{ }\NormalTok{smokever2011 +}\StringTok{ }\NormalTok{diabetes2011 +}\StringTok{ }\NormalTok{highbp2011, }\DataTypeTok{data=}\NormalTok{wls_mal))}
+\KeywordTok{plot.roc_wrap}\NormalTok{(}\KeywordTok{glm_wrap}\NormalTok{(doc2011 ~}\StringTok{ }\NormalTok{age +}\StringTok{ }\NormalTok{highchol2011 +}\StringTok{ }\NormalTok{smokever2011 +}\StringTok{ }\NormalTok{diabetes2011 +}\StringTok{ }\NormalTok{highbp2011, }\DataTypeTok{data=}\NormalTok{wls_mal))}
+\KeywordTok{plot.roc_wrap}\NormalTok{(}\KeywordTok{glm_wrap}\NormalTok{(HAC2004 ~}\StringTok{ }\NormalTok{age +}\StringTok{ }\NormalTok{highchol2011 +}\StringTok{ }\NormalTok{smokever2011 +}\StringTok{ }\NormalTok{diabetes2011 +}\StringTok{ }\NormalTok{highbp2011, }\DataTypeTok{data=}\NormalTok{wls_mal))}
+\KeywordTok{plot.roc_wrap}\NormalTok{(}\KeywordTok{glm_wrap}\NormalTok{(doc2004 ~}\StringTok{ }\NormalTok{age +}\StringTok{ }\NormalTok{highchol2011 +}\StringTok{ }\NormalTok{smokever2011 +}\StringTok{ }\NormalTok{diabetes2011 +}\StringTok{ }\NormalTok{highbp2011, }\DataTypeTok{data=}\NormalTok{wls_mal))}
+
+
+
+\NormalTok{## ----plot-hac2011-females, fig.show='hide'-------------------------------}
+\KeywordTok{plot.roc_wrap}\NormalTok{(}\KeywordTok{glm_wrap}\NormalTok{(HAC2011 ~}\StringTok{ }\NormalTok{age +}\StringTok{ }\NormalTok{highchol2011 +}\StringTok{ }\NormalTok{smokever2011 +}\StringTok{ }\NormalTok{diabetes2011 +}\StringTok{ }\NormalTok{highbp2011, }\DataTypeTok{data=}\NormalTok{wls_fem))}
+\KeywordTok{plot.roc_wrap}\NormalTok{(}\KeywordTok{glm_wrap}\NormalTok{(doc2011 ~}\StringTok{ }\NormalTok{age +}\StringTok{ }\NormalTok{highchol2011 +}\StringTok{ }\NormalTok{smokever2011 +}\StringTok{ }\NormalTok{diabetes2011 +}\StringTok{ }\NormalTok{highbp2011, }\DataTypeTok{data=}\NormalTok{wls_fem))}
+\KeywordTok{plot.roc_wrap}\NormalTok{(}\KeywordTok{glm_wrap}\NormalTok{(HAC2004 ~}\StringTok{ }\NormalTok{age +}\StringTok{ }\NormalTok{highchol2011 +}\StringTok{ }\NormalTok{smokever2011 +}\StringTok{ }\NormalTok{diabetes2011 +}\StringTok{ }\NormalTok{highbp2011, }\DataTypeTok{data=}\NormalTok{wls_fem))}
+\KeywordTok{plot.roc_wrap}\NormalTok{(}\KeywordTok{glm_wrap}\NormalTok{(doc2004 ~}\StringTok{ }\NormalTok{age +}\StringTok{ }\NormalTok{highchol2011 +}\StringTok{ }\NormalTok{smokever2011 +}\StringTok{ }\NormalTok{diabetes2011 +}\StringTok{ }\NormalTok{highbp2011, }\DataTypeTok{data=}\NormalTok{wls_fem))}
+
+
+
+\NormalTok{## ----subdivide-diabetes2004, fig.show='hide'-----------------------------}
+\NormalTok{wls_dm04<-}\StringTok{ }\NormalTok{wls[wls$diabetes2004 ==}\StringTok{ "Yes"}\NormalTok{,]}
+\NormalTok{wls_nodm04<-}\StringTok{ }\NormalTok{wls[wls$diabetes2004 ==}\StringTok{ "No"}\NormalTok{,]}
+\KeywordTok{plot.roc_wrap}\NormalTok{(}\KeywordTok{glm_wrap}\NormalTok{(HAC2011 ~}\StringTok{ }\NormalTok{sex +}\StringTok{ }\NormalTok{age +}\StringTok{ }\NormalTok{highchol2011 +}\StringTok{ }\NormalTok{smokever2011 +}\StringTok{ }\NormalTok{highbp2011, }\DataTypeTok{data=}\NormalTok{wls_nodm04))}
+
+
+\NormalTok{## ------------------------------------------------------------------------}
+\CommentTok{# write a function that 1. partitions wls by a binary variable and outputs two data subsets as a list.}
+\NormalTok{subdivide <-}\StringTok{ }\NormalTok{function(}\DataTypeTok{data =} \NormalTok{wls, }\DataTypeTok{indicator =} \NormalTok{sex)}
+    \NormalTok{\{}
+    \NormalTok{out <-}\StringTok{ }\KeywordTok{list}\NormalTok{(wls[indicator,], wls[!indicator,])}
+    \KeywordTok{return}\NormalTok{(out)}
+    \NormalTok{\}}
+
+
+
+\NormalTok{## ----fivefoldcv----------------------------------------------------------}
+\NormalTok{df_in <-}\StringTok{ }\KeywordTok{with}\NormalTok{(wls, }\KeywordTok{data.frame}\NormalTok{(sex, age, highchol2011, smokever2011, diabetes2011, highbp2011))}
+\KeywordTok{source}\NormalTok{(}\StringTok{"glmcv.R"}\NormalTok{)}
+\KeywordTok{glmcv}\NormalTok{(}\DataTypeTok{x=}\NormalTok{df_in, }\DataTypeTok{y=}\NormalTok{wls$HAC2011)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{require}\NormalTok{(caret)}
+\KeywordTok{require}\NormalTok{(car)}
+\KeywordTok{require}\NormalTok{(ggplot2)}
+\KeywordTok{require}\NormalTok{(pROC)}
+\KeywordTok{require}\NormalTok{(gbm)}
+\KeywordTok{require}\NormalTok{(rpart)}
+\KeywordTok{require}\NormalTok{(rpart.plot)}
+
+\NormalTok{## Framingham variables}
+\NormalTok{framvar11 <-}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{"sex"}\NormalTok{, }\StringTok{"age"}\NormalTok{, }\StringTok{"highchol2011"}\NormalTok{, }\StringTok{"smokever2011"}\NormalTok{, }\StringTok{"diabetes2011"}\NormalTok{, }
+    \StringTok{"highbp2011"}\NormalTok{)}
+\NormalTok{framvar04 <-}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{"sex"}\NormalTok{, }\StringTok{"age"}\NormalTok{, }\StringTok{"highchol2004"}\NormalTok{, }\StringTok{"smokever2004"}\NormalTok{, }\StringTok{"diabetes2004"}\NormalTok{, }
+    \StringTok{"highbp2004"}\NormalTok{)}
+
+\NormalTok{## append missing value indicators to covariates 'x'}
+\NormalTok{dat <-}\StringTok{ }\KeywordTok{read.csv}\NormalTok{(}\StringTok{"/mnt/DATA/Main/Spring 2015/998/Proj2/docs/WLS2.csv"}\NormalTok{)}
+\NormalTok{x1 <-}\StringTok{ }\NormalTok{dat[, !}\KeywordTok{colnames}\NormalTok{(dat) %in%}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{"HA2011"}\NormalTok{, }\StringTok{"HA2004"}\NormalTok{, }\StringTok{"HAC2011"}\NormalTok{, }\StringTok{"HAC2004"}\NormalTok{, }
+    \StringTok{"doc2011"}\NormalTok{, }\StringTok{"doc2004"}\NormalTok{)]}
+\NormalTok{miss_pct <-}\StringTok{ }\KeywordTok{sapply}\NormalTok{(}\KeywordTok{colnames}\NormalTok{(x1), function(nam) }\KeywordTok{mean}\NormalTok{(}\KeywordTok{is.na}\NormalTok{(dat[, nam])))}
+\NormalTok{x2 <-}\StringTok{ }\KeywordTok{data.frame}\NormalTok{((}\KeywordTok{is.na}\NormalTok{(x1[, miss_pct >}\StringTok{ }\FloatTok{0.1}\NormalTok{]) *}\StringTok{ }\DecValTok{1}\NormalTok{))}
+\KeywordTok{names}\NormalTok{(x2) <-}\StringTok{ }\KeywordTok{paste0}\NormalTok{(}\KeywordTok{names}\NormalTok{(x1[miss_pct >}\StringTok{ }\FloatTok{0.1}\NormalTok{]), }\StringTok{"_missid"}\NormalTok{)}
+\NormalTok{x <-}\StringTok{ }\KeywordTok{data.frame}\NormalTok{(x1, x2)  }\CommentTok{# appended with a missing value indicator for each variable}
+\NormalTok{id_11 <-}\StringTok{ }\KeywordTok{grepl}\NormalTok{(}\StringTok{"2011"}\NormalTok{, }\KeywordTok{names}\NormalTok{(x))}
+\NormalTok{x04 <-}\StringTok{ }\NormalTok{x[, !id_11]  }\CommentTok{# excluding 2011 covariates}
+\NormalTok{id1_11 <-}\StringTok{ }\KeywordTok{grepl}\NormalTok{(}\StringTok{"2011"}\NormalTok{, }\KeywordTok{names}\NormalTok{(x1))}
+\NormalTok{x104 <-}\StringTok{ }\NormalTok{x1[, !id1_11]  }\CommentTok{# no missing value indicators, excluding 2011 covariates}
+
+\NormalTok{## create cross validation folds for response variables Note gbm requires}
+\NormalTok{## integer response in \{0,1\}}
+\NormalTok{h11 <-}\StringTok{ }\KeywordTok{Recode}\NormalTok{(dat$HAC2011, }\StringTok{"'Yes'=1; 'No'=0"}\NormalTok{, }\DataTypeTok{as.factor =} \NormalTok{F)}
+\NormalTok{h04 <-}\StringTok{ }\KeywordTok{Recode}\NormalTok{(dat$HAC2004, }\StringTok{"'Yes'=1; 'No'=0"}\NormalTok{, }\DataTypeTok{as.factor =} \NormalTok{F)}
+\NormalTok{d11 <-}\StringTok{ }\KeywordTok{Recode}\NormalTok{(dat$doc2011, }\StringTok{"'Yes'=1; 'No'=0"}\NormalTok{, }\DataTypeTok{as.factor =} \NormalTok{F)}
+\NormalTok{d04 <-}\StringTok{ }\KeywordTok{Recode}\NormalTok{(dat$doc2004, }\StringTok{"'Yes'=1; 'No'=0"}\NormalTok{, }\DataTypeTok{as.factor =} \NormalTok{F)}
+\NormalTok{h0411 <-}\StringTok{ }\KeywordTok{rep}\NormalTok{(}\DecValTok{0}\NormalTok{, }\KeywordTok{length}\NormalTok{(h11))}
+\NormalTok{h0411[}\KeywordTok{is.na}\NormalTok{(h04 +}\StringTok{ }\NormalTok{h11) |}\StringTok{ }\NormalTok{h04 ==}\StringTok{ }\DecValTok{1}\NormalTok{] <-}\StringTok{ }\OtherTok{NA}
+\NormalTok{h0411[h04 ==}\StringTok{ }\DecValTok{0} \NormalTok{&}\StringTok{ }\NormalTok{h11 ==}\StringTok{ }\DecValTok{1}\NormalTok{] <-}\StringTok{ }\DecValTok{1}
+\NormalTok{d0411 <-}\StringTok{ }\KeywordTok{rep}\NormalTok{(}\DecValTok{0}\NormalTok{, }\KeywordTok{length}\NormalTok{(d11))}
+\NormalTok{d0411[}\KeywordTok{is.na}\NormalTok{(d04 +}\StringTok{ }\NormalTok{d11) |}\StringTok{ }\NormalTok{d04 ==}\StringTok{ }\DecValTok{1}\NormalTok{] <-}\StringTok{ }\OtherTok{NA}
+\NormalTok{d0411[d04 ==}\StringTok{ }\DecValTok{0} \NormalTok{&}\StringTok{ }\NormalTok{d11 ==}\StringTok{ }\DecValTok{1}\NormalTok{] <-}\StringTok{ }\DecValTok{1}
+
+\KeywordTok{set.seed}\NormalTok{(}\DecValTok{9881829}\NormalTok{)}
+\NormalTok{folds_h11_temp <-}\StringTok{ }\KeywordTok{createFolds}\NormalTok{(}\KeywordTok{which}\NormalTok{(!}\KeywordTok{is.na}\NormalTok{(h11)), }\DataTypeTok{k =} \DecValTok{5}\NormalTok{, }\DataTypeTok{list =} \NormalTok{T, }\DataTypeTok{returnTrain =} \NormalTok{F)}
+\NormalTok{folds_h11 <-}\StringTok{ }\KeywordTok{lapply}\NormalTok{(folds_h11_temp, function(x) }\KeywordTok{which}\NormalTok{(!}\KeywordTok{is.na}\NormalTok{(h11))[x])}
+\NormalTok{folds_h04_temp <-}\StringTok{ }\KeywordTok{createFolds}\NormalTok{(}\KeywordTok{which}\NormalTok{(!}\KeywordTok{is.na}\NormalTok{(h04)), }\DataTypeTok{k =} \DecValTok{5}\NormalTok{, }\DataTypeTok{list =} \NormalTok{T, }\DataTypeTok{returnTrain =} \NormalTok{F)}
+\NormalTok{folds_h04 <-}\StringTok{ }\KeywordTok{lapply}\NormalTok{(folds_h04_temp, function(x) }\KeywordTok{which}\NormalTok{(!}\KeywordTok{is.na}\NormalTok{(h04))[x])}
+\NormalTok{folds_h0411_temp <-}\StringTok{ }\KeywordTok{createFolds}\NormalTok{(}\KeywordTok{which}\NormalTok{(!}\KeywordTok{is.na}\NormalTok{(h0411)), }\DataTypeTok{k =} \DecValTok{5}\NormalTok{, }\DataTypeTok{list =} \NormalTok{T, }\DataTypeTok{returnTrain =} \NormalTok{F)}
+\NormalTok{folds_h0411 <-}\StringTok{ }\KeywordTok{lapply}\NormalTok{(folds_h0411_temp, function(x) }\KeywordTok{which}\NormalTok{(!}\KeywordTok{is.na}\NormalTok{(h0411))[x])}
+\NormalTok{folds_d11_temp <-}\StringTok{ }\KeywordTok{createFolds}\NormalTok{(}\KeywordTok{which}\NormalTok{(!}\KeywordTok{is.na}\NormalTok{(d11)), }\DataTypeTok{k =} \DecValTok{5}\NormalTok{, }\DataTypeTok{list =} \NormalTok{T, }\DataTypeTok{returnTrain =} \NormalTok{F)}
+\NormalTok{folds_d11 <-}\StringTok{ }\KeywordTok{lapply}\NormalTok{(folds_d11_temp, function(x) }\KeywordTok{which}\NormalTok{(!}\KeywordTok{is.na}\NormalTok{(d11))[x])}
+\NormalTok{folds_d04_temp <-}\StringTok{ }\KeywordTok{createFolds}\NormalTok{(}\KeywordTok{which}\NormalTok{(!}\KeywordTok{is.na}\NormalTok{(d04)), }\DataTypeTok{k =} \DecValTok{5}\NormalTok{, }\DataTypeTok{list =} \NormalTok{T, }\DataTypeTok{returnTrain =} \NormalTok{F)}
+\NormalTok{folds_d04 <-}\StringTok{ }\KeywordTok{lapply}\NormalTok{(folds_d04_temp, function(x) }\KeywordTok{which}\NormalTok{(!}\KeywordTok{is.na}\NormalTok{(d04))[x])}
+\NormalTok{folds_d0411_temp <-}\StringTok{ }\KeywordTok{createFolds}\NormalTok{(}\KeywordTok{which}\NormalTok{(!}\KeywordTok{is.na}\NormalTok{(d0411)), }\DataTypeTok{k =} \DecValTok{5}\NormalTok{, }\DataTypeTok{list =} \NormalTok{T, }\DataTypeTok{returnTrain =} \NormalTok{F)}
+\NormalTok{folds_d0411 <-}\StringTok{ }\KeywordTok{lapply}\NormalTok{(folds_d0411_temp, function(x) }\KeywordTok{which}\NormalTok{(!}\KeywordTok{is.na}\NormalTok{(d0411))[x])}
+\KeywordTok{rm}\NormalTok{(folds_h11_temp, folds_h04_temp, folds_h0411_temp, folds_d11_temp, folds_d04_temp, }
+    \NormalTok{folds_d0411_temp)}
+
+\NormalTok{#### Test for optimal GBM tuning parameters}
+
+\NormalTok{## function to get cross validation deviance, modified deviance, mse,}
+\NormalTok{## misclassification rate, and auc}
+\NormalTok{gbmCV <-}\StringTok{ }\NormalTok{function(x, y, folds, tree_inc, }\DataTypeTok{dist =} \StringTok{"adaboost"}\NormalTok{, }\DataTypeTok{id =} \DecValTok{1}\NormalTok{, }\DataTypeTok{bf =} \FloatTok{0.5}\NormalTok{, }
+    \DataTypeTok{sh =} \FloatTok{0.001}\NormalTok{, }\DataTypeTok{singlefold =} \NormalTok{F) \{}
+    
+    \NormalTok{getDev <-}\StringTok{ }\NormalTok{function(p, y) -}\KeywordTok{mean}\NormalTok{(}\KeywordTok{ifelse}\NormalTok{(y ==}\StringTok{ }\DecValTok{1}\NormalTok{, }\KeywordTok{log}\NormalTok{(p), }\KeywordTok{log}\NormalTok{(}\DecValTok{1} \NormalTok{-}\StringTok{ }\NormalTok{p)))}
+    \NormalTok{getDevmod <-}\StringTok{ }\NormalTok{function(p, y) }\KeywordTok{getDev}\NormalTok{(}\KeywordTok{pmin}\NormalTok{(}\KeywordTok{pmax}\NormalTok{(p, }\FloatTok{0.001}\NormalTok{), }\FloatTok{0.999}\NormalTok{), y)}
+    \NormalTok{getMse <-}\StringTok{ }\NormalTok{function(p, y) }\KeywordTok{mean}\NormalTok{((y -}\StringTok{ }\NormalTok{p)^}\DecValTok{2}\NormalTok{)}
+    \NormalTok{getMisclass <-}\StringTok{ }\NormalTok{function(p, y) }\KeywordTok{mean}\NormalTok{(}\KeywordTok{abs}\NormalTok{((p >}\StringTok{ }\FloatTok{0.5}\NormalTok{) -}\StringTok{ }\NormalTok{y))}
+    \NormalTok{getAUC <-}\StringTok{ }\NormalTok{function(p, y) }\KeywordTok{auc}\NormalTok{(y, p)}
+    
+    \NormalTok{gbmInit2 <-}\StringTok{ }\NormalTok{function(y, x, tree_inc) \{}
+        \NormalTok{tree_ct <-}\StringTok{ }\NormalTok{tree_inc}
+        \NormalTok{gbm_fit <-}\StringTok{ }\KeywordTok{gbm}\NormalTok{(y ~}\StringTok{ }\NormalTok{., }\DataTypeTok{data =} \NormalTok{x, }\DataTypeTok{distribution =} \NormalTok{dist, }\DataTypeTok{n.tree =} \NormalTok{tree_inc, }
+            \DataTypeTok{shrinkage =} \NormalTok{sh, }\DataTypeTok{interaction.depth =} \NormalTok{id, }\DataTypeTok{bag.fraction =} \NormalTok{bf)}
+        \NormalTok{best_tree <-}\StringTok{ }\KeywordTok{gbm.perf}\NormalTok{(gbm_fit, }\DataTypeTok{method =} \StringTok{"OOB"}\NormalTok{)}
+        \NormalTok{while (best_tree/tree_ct >}\StringTok{ }\FloatTok{0.99}\NormalTok{) \{}
+            \NormalTok{tree_ct <-}\StringTok{ }\NormalTok{tree_ct +}\StringTok{ }\NormalTok{tree_inc}
+            \NormalTok{gbm_fit <-}\StringTok{ }\KeywordTok{gbm.more}\NormalTok{(gbm_fit, }\DataTypeTok{n.new.trees =} \NormalTok{tree_inc)}
+            \NormalTok{best_tree <-}\StringTok{ }\KeywordTok{gbm.perf}\NormalTok{(gbm_fit, }\DataTypeTok{method =} \StringTok{"OOB"}\NormalTok{)}
+        \NormalTok{\}}
+        \KeywordTok{list}\NormalTok{(}\DataTypeTok{gbm_fit =} \NormalTok{gbm_fit, }\DataTypeTok{best_tree =} \NormalTok{best_tree)}
+    \NormalTok{\}}
+    
+    \NormalTok{best_tree <-}\StringTok{ }\KeywordTok{vector}\NormalTok{()}
+    \NormalTok{dev <-}\StringTok{ }\KeywordTok{vector}\NormalTok{()}
+    \NormalTok{devmod <-}\StringTok{ }\KeywordTok{vector}\NormalTok{()}
+    \NormalTok{mse <-}\StringTok{ }\KeywordTok{vector}\NormalTok{()}
+    \NormalTok{misclass <-}\StringTok{ }\KeywordTok{vector}\NormalTok{()}
+    \NormalTok{auc1 <-}\StringTok{ }\KeywordTok{vector}\NormalTok{()}
+    \NormalTok{cv_num <-}\StringTok{ }\NormalTok{if (singlefold) }
+        \DecValTok{1} \NormalTok{else }\KeywordTok{length}\NormalTok{(folds)}
+    \NormalTok{for (i in }\DecValTok{1}\NormalTok{:cv_num) \{}
+        \NormalTok{train_id <-}\StringTok{ }\KeywordTok{Reduce}\NormalTok{(union, folds[-i])}
+        \NormalTok{test_id <-}\StringTok{ }\NormalTok{folds[[i]]}
+        \NormalTok{xtrain <-}\StringTok{ }\NormalTok{x[train_id, , drop =}\StringTok{ }\NormalTok{F]}
+        \NormalTok{ytrain <-}\StringTok{ }\NormalTok{y[train_id]}
+        \NormalTok{xtest <-}\StringTok{ }\NormalTok{x[test_id, , drop =}\StringTok{ }\NormalTok{F]}
+        \NormalTok{ytest <-}\StringTok{ }\NormalTok{y[test_id]}
+        \NormalTok{init <-}\StringTok{ }\KeywordTok{gbmInit2}\NormalTok{(ytrain, xtrain, tree_inc)}
+        \NormalTok{gbm_fit <-}\StringTok{ }\NormalTok{init$gbm_fit}
+        \NormalTok{best_tree[i] <-}\StringTok{ }\NormalTok{init$best_tree}
+        \NormalTok{## predicted probability of class 1}
+        \NormalTok{pred <-}\StringTok{ }\KeywordTok{predict}\NormalTok{(gbm_fit, }\DataTypeTok{newdata =} \NormalTok{xtest, }\DataTypeTok{n.trees =} \NormalTok{best_tree[i], }\DataTypeTok{type =} \StringTok{"response"}\NormalTok{)}
+        \NormalTok{dev[i] <-}\StringTok{ }\KeywordTok{getDev}\NormalTok{(pred, ytest)}
+        \NormalTok{devmod[i] <-}\StringTok{ }\KeywordTok{getDevmod}\NormalTok{(pred, ytest)}
+        \NormalTok{mse[i] <-}\StringTok{ }\KeywordTok{getMse}\NormalTok{(pred, ytest)}
+        \NormalTok{misclass[i] <-}\StringTok{ }\KeywordTok{getMisclass}\NormalTok{(pred, ytest)}
+        \NormalTok{auc1[i] <-}\StringTok{ }\KeywordTok{getAUC}\NormalTok{(pred, ytest)}
+    \NormalTok{\}}
+    
+    \KeywordTok{cbind}\NormalTok{(dev, devmod, mse, misclass, }\DataTypeTok{auc =} \NormalTok{auc1, best_tree)}
+\NormalTok{\}  }\CommentTok{# end gbmCV}
+
+\NormalTok{## 1-fold gbm tuning parameter tests (excluding missing value indicators to}
+\NormalTok{## save time)}
+\NormalTok{par <-}\StringTok{ }\KeywordTok{rbind}\NormalTok{(}\KeywordTok{data.frame}\NormalTok{(}\DataTypeTok{dist =} \StringTok{"adaboost"}\NormalTok{, }\DataTypeTok{id =} \DecValTok{1}\NormalTok{, }\DataTypeTok{bf =} \FloatTok{0.5}\NormalTok{, }\DataTypeTok{sh =} \FloatTok{0.01}\NormalTok{), }\KeywordTok{data.frame}\NormalTok{(}\DataTypeTok{dist =} \StringTok{"bernoulli"}\NormalTok{, }
+    \DataTypeTok{id =} \DecValTok{1}\NormalTok{, }\DataTypeTok{bf =} \FloatTok{0.5}\NormalTok{, }\DataTypeTok{sh =} \FloatTok{0.01}\NormalTok{), }\KeywordTok{data.frame}\NormalTok{(}\DataTypeTok{dist =} \StringTok{"adaboost"}\NormalTok{, }\DataTypeTok{id =} \DecValTok{3}\NormalTok{, }\DataTypeTok{bf =} \FloatTok{0.5}\NormalTok{, }
+    \DataTypeTok{sh =} \FloatTok{0.01}\NormalTok{), }\KeywordTok{data.frame}\NormalTok{(}\DataTypeTok{dist =} \StringTok{"bernoulli"}\NormalTok{, }\DataTypeTok{id =} \DecValTok{3}\NormalTok{, }\DataTypeTok{bf =} \FloatTok{0.5}\NormalTok{, }\DataTypeTok{sh =} \FloatTok{0.01}\NormalTok{), }
+    \KeywordTok{data.frame}\NormalTok{(}\DataTypeTok{dist =} \StringTok{"adaboost"}\NormalTok{, }\DataTypeTok{id =} \DecValTok{5}\NormalTok{, }\DataTypeTok{bf =} \FloatTok{0.5}\NormalTok{, }\DataTypeTok{sh =} \FloatTok{0.01}\NormalTok{), }\KeywordTok{data.frame}\NormalTok{(}\DataTypeTok{dist =} \StringTok{"bernoulli"}\NormalTok{, }
+        \DataTypeTok{id =} \DecValTok{5}\NormalTok{, }\DataTypeTok{bf =} \FloatTok{0.5}\NormalTok{, }\DataTypeTok{sh =} \FloatTok{0.01}\NormalTok{), }\KeywordTok{data.frame}\NormalTok{(}\DataTypeTok{dist =} \StringTok{"adaboost"}\NormalTok{, }\DataTypeTok{id =} \DecValTok{7}\NormalTok{, }
+        \DataTypeTok{bf =} \FloatTok{0.5}\NormalTok{, }\DataTypeTok{sh =} \FloatTok{0.01}\NormalTok{), }\KeywordTok{data.frame}\NormalTok{(}\DataTypeTok{dist =} \StringTok{"bernoulli"}\NormalTok{, }\DataTypeTok{id =} \DecValTok{7}\NormalTok{, }\DataTypeTok{bf =} \FloatTok{0.5}\NormalTok{, }
+        \DataTypeTok{sh =} \FloatTok{0.01}\NormalTok{), }\KeywordTok{data.frame}\NormalTok{(}\DataTypeTok{dist =} \StringTok{"adaboost"}\NormalTok{, }\DataTypeTok{id =} \DecValTok{1}\NormalTok{, }\DataTypeTok{bf =} \FloatTok{0.3}\NormalTok{, }\DataTypeTok{sh =} \FloatTok{0.01}\NormalTok{), }
+    \KeywordTok{data.frame}\NormalTok{(}\DataTypeTok{dist =} \StringTok{"bernoulli"}\NormalTok{, }\DataTypeTok{id =} \DecValTok{1}\NormalTok{, }\DataTypeTok{bf =} \FloatTok{0.3}\NormalTok{, }\DataTypeTok{sh =} \FloatTok{0.01}\NormalTok{), }\KeywordTok{data.frame}\NormalTok{(}\DataTypeTok{dist =} \StringTok{"adaboost"}\NormalTok{, }
+        \DataTypeTok{id =} \DecValTok{1}\NormalTok{, }\DataTypeTok{bf =} \FloatTok{0.7}\NormalTok{, }\DataTypeTok{sh =} \FloatTok{0.01}\NormalTok{), }\KeywordTok{data.frame}\NormalTok{(}\DataTypeTok{dist =} \StringTok{"bernoulli"}\NormalTok{, }\DataTypeTok{id =} \DecValTok{1}\NormalTok{, }
+        \DataTypeTok{bf =} \FloatTok{0.7}\NormalTok{, }\DataTypeTok{sh =} \FloatTok{0.01}\NormalTok{), }\KeywordTok{data.frame}\NormalTok{(}\DataTypeTok{dist =} \StringTok{"adaboost"}\NormalTok{, }\DataTypeTok{id =} \DecValTok{1}\NormalTok{, }\DataTypeTok{bf =} \FloatTok{0.5}\NormalTok{, }
+        \DataTypeTok{sh =} \FloatTok{0.001}\NormalTok{), }\KeywordTok{data.frame}\NormalTok{(}\DataTypeTok{dist =} \StringTok{"bernoulli"}\NormalTok{, }\DataTypeTok{id =} \DecValTok{1}\NormalTok{, }\DataTypeTok{bf =} \FloatTok{0.5}\NormalTok{, }\DataTypeTok{sh =} \FloatTok{0.001}\NormalTok{))}
+\CommentTok{# set.seed(95709963) gbmcvtest_h11 <- t(mapply(dist=as.character(par$dist),}
+\CommentTok{# id=par$id, bf=par$bf, sh=par$sh, function(dist, id, bf, sh) gbmCV(x1, h11,}
+\CommentTok{# folds_h11, tree_inc=1000, dist=dist, id=id, bf=bf, sh=sh, singlefold=T)))}
+\CommentTok{# colnames(gbmcvtest_h11) <-}
+\CommentTok{# c('dev','devmod','mse','misclass','auc','best_tree') gbmcvtest_d11 <-}
+\CommentTok{# t(mapply(dist=as.character(par$dist), id=par$id, bf=par$bf, sh=par$sh,}
+\CommentTok{# function(dist, id, bf, sh) gbmCV(x1, d11, folds_d11, tree_inc=1000,}
+\CommentTok{# dist=dist, id=id, bf=bf, sh=sh, singlefold=T))) colnames(gbmcvtest_d11) <-}
+\CommentTok{# c('dev','devmod','mse','misclass','auc','best_tree') save(gbmcvtest_h11,}
+\CommentTok{# gbmcvtest_d11, file='/mnt/DATA/Main/Spring}
+\CommentTok{# 2015/998/Proj2/models/gbmcvtest.rda')}
+\KeywordTok{load}\NormalTok{(}\StringTok{"/mnt/DATA/Main/Spring 2015/998/Proj2/models/gbmcvtest.rda"}\NormalTok{)}
+\KeywordTok{cbind}\NormalTok{(par, gbmcvtest_h11)}
+\KeywordTok{cbind}\NormalTok{(par, gbmcvtest_d11)}
+
+
+\NormalTok{#### Fit GBM models using optimal tuning parameters to get Relative Importance}
+\NormalTok{#### scores}
+
+\NormalTok{## function to grow incremental trees until the out of bag optimum number is}
+\NormalTok{## reached}
+\NormalTok{gbmInit <-}\StringTok{ }\NormalTok{function(y, x, folds, }\DataTypeTok{tree_inc =} \DecValTok{1000}\NormalTok{, }\DataTypeTok{sh =} \FloatTok{0.001}\NormalTok{) \{}
+    \NormalTok{id <-}\StringTok{ }\KeywordTok{Reduce}\NormalTok{(union, folds)}
+    \NormalTok{xfit <-}\StringTok{ }\NormalTok{x[id, ]}
+    \NormalTok{yfit <-}\StringTok{ }\NormalTok{y[id]}
+    \NormalTok{ntree <-}\StringTok{ }\NormalTok{tree_inc}
+    \NormalTok{gbm_fit <-}\StringTok{ }\KeywordTok{gbm.fit}\NormalTok{(xfit, yfit, }\DataTypeTok{distribution =} \StringTok{"adaboost"}\NormalTok{, }\DataTypeTok{n.tree =} \NormalTok{tree_inc, }
+        \DataTypeTok{shrinkage =} \NormalTok{sh)}
+    \NormalTok{while (}\KeywordTok{gbm.perf}\NormalTok{(gbm_fit, }\DataTypeTok{method =} \StringTok{"OOB"}\NormalTok{) ==}\StringTok{ }\NormalTok{ntree) \{}
+        \NormalTok{ntree <-}\StringTok{ }\NormalTok{ntree +}\StringTok{ }\NormalTok{tree_inc}
+        \NormalTok{gbm_fit <-}\StringTok{ }\KeywordTok{gbm.more}\NormalTok{(gbm_fit, }\DataTypeTok{n.new.trees =} \NormalTok{tree_inc)}
+    \NormalTok{\}}
+    \NormalTok{gbm_fit}
+\NormalTok{\}}
+
+\CommentTok{# set.seed(96633) gbm_h11b <- gbmInit(h11, x, folds_h11, 1000, .01) gbm_h04b}
+\CommentTok{# <- gbmInit(h04, x04, folds_h04, 1000, .01) gbm_h0411b <- gbmInit(h0411,}
+\CommentTok{# x04, folds_h0411, 1000, .01) gbm_d11b <- gbmInit(d11, x, folds_d11, 1000,}
+\CommentTok{# .01) gbm_d04b <- gbmInit(d04, x04, folds_d04, 1000, .01) gbm_d0411b <-}
+\CommentTok{# gbmInit(d0411, x04, folds_d0411, 1000, .01) save(gbm_h11b, gbm_h04b,}
+\CommentTok{# gbm_h0411b, gbm_d11b, gbm_d04b, gbm_d0411b, file='/mnt/DATA/Main/Spring}
+\CommentTok{# 2015/998/Proj2/models/gbm-initialb.rda')}
+\KeywordTok{load}\NormalTok{(}\StringTok{"/mnt/DATA/Main/Spring 2015/998/Proj2/models/gbm-initialb.rda"}\NormalTok{)}
+
+\NormalTok{best_h11b <-}\StringTok{ }\KeywordTok{gbm.perf}\NormalTok{(gbm_h11b, }\DataTypeTok{method =} \StringTok{"OOB"}\NormalTok{)}
+\NormalTok{best_h04b <-}\StringTok{ }\KeywordTok{gbm.perf}\NormalTok{(gbm_h04b, }\DataTypeTok{method =} \StringTok{"OOB"}\NormalTok{)}
+\NormalTok{best_h0411b <-}\StringTok{ }\KeywordTok{gbm.perf}\NormalTok{(gbm_h0411b, }\DataTypeTok{method =} \StringTok{"OOB"}\NormalTok{)}
+\NormalTok{best_d11b <-}\StringTok{ }\KeywordTok{gbm.perf}\NormalTok{(gbm_d11b, }\DataTypeTok{method =} \StringTok{"OOB"}\NormalTok{)}
+\NormalTok{best_d04b <-}\StringTok{ }\KeywordTok{gbm.perf}\NormalTok{(gbm_d04b, }\DataTypeTok{method =} \StringTok{"OOB"}\NormalTok{)}
+\NormalTok{best_d0411b <-}\StringTok{ }\KeywordTok{gbm.perf}\NormalTok{(gbm_d0411b, }\DataTypeTok{method =} \StringTok{"OOB"}\NormalTok{)}
+
+\KeywordTok{summary}\NormalTok{(gbm_h11b, }\DataTypeTok{n.trees =} \NormalTok{best_h11b)[}\KeywordTok{summary}\NormalTok{(gbm_h11b, }\DataTypeTok{n.trees =} \NormalTok{best_h11b)$rel.inf >}\StringTok{ }
+\StringTok{    }\DecValTok{0}\NormalTok{, ]}
+\KeywordTok{summary}\NormalTok{(gbm_h04b, }\DataTypeTok{n.trees =} \NormalTok{best_h04b)[}\KeywordTok{summary}\NormalTok{(gbm_h04b, }\DataTypeTok{n.trees =} \NormalTok{best_h04b)$rel.inf >}\StringTok{ }
+\StringTok{    }\DecValTok{0}\NormalTok{, ]}
+\KeywordTok{summary}\NormalTok{(gbm_h0411b, }\DataTypeTok{n.trees =} \NormalTok{best_h0411b)[}\KeywordTok{summary}\NormalTok{(gbm_h0411b, }\DataTypeTok{n.trees =} \NormalTok{best_h0411b)$rel.inf >}\StringTok{ }
+\StringTok{    }\DecValTok{0}\NormalTok{, ]}
+\KeywordTok{summary}\NormalTok{(gbm_d11b, }\DataTypeTok{n.trees =} \NormalTok{best_d11b)[}\KeywordTok{summary}\NormalTok{(gbm_d11b, }\DataTypeTok{n.trees =} \NormalTok{best_d11b)$rel.inf >}\StringTok{ }
+\StringTok{    }\DecValTok{0}\NormalTok{, ]}
+\KeywordTok{summary}\NormalTok{(gbm_d04b, }\DataTypeTok{n.trees =} \NormalTok{best_d04b)[}\KeywordTok{summary}\NormalTok{(gbm_d04b, }\DataTypeTok{n.trees =} \NormalTok{best_d04b)$rel.inf >}\StringTok{ }
+\StringTok{    }\DecValTok{0}\NormalTok{, ]}
+\KeywordTok{summary}\NormalTok{(gbm_d0411b, }\DataTypeTok{n.trees =} \NormalTok{best_d0411b)[}\KeywordTok{summary}\NormalTok{(gbm_d0411b, }\DataTypeTok{n.trees =} \NormalTok{best_d0411b)$rel.inf >}\StringTok{ }
+\StringTok{    }\DecValTok{0}\NormalTok{, ]}
+
+\NormalTok{#### GBM 5-fold cross validation}
+
+\NormalTok{## GBM 5-fold cross validation--all variables gbmcv_h11 <- gbmCV(x1, h11,}
+\NormalTok{## folds_h11, tree_inc=1000, sh=.01) gbmcv_h04 <- gbmCV(x104, h04, folds_h04,}
+\NormalTok{## tree_inc=1000, sh=.01) gbmcv_h0411 <- gbmCV(x104, h0411, folds_h0411,}
+\NormalTok{## tree_inc=1000, sh=.01) gbmcv_d11 <- gbmCV(x1, d11, folds_d11,}
+\NormalTok{## tree_inc=1000, sh=.01) gbmcv_d04 <- gbmCV(x104, d04, folds_d04,}
+\NormalTok{## tree_inc=1000, sh=.01) gbmcv_d0411 <- gbmCV(x104, d0411, folds_d0411,}
+\NormalTok{## tree_inc=1000, sh=.01) save(gbmcv_h11, gbmcv_h04, gbmcv_h0411, gbmcv_d11,}
+\NormalTok{## gbmcv_d04, gbmcv_d0411, file='/mnt/DATA/Main/Spring}
+\NormalTok{## 2015/998/Proj2/models/gbmcv.rda')}
+\KeywordTok{load}\NormalTok{(}\StringTok{"/mnt/DATA/Main/Spring 2015/998/Proj2/models/gbmcv.rda"}\NormalTok{)}
+\NormalTok{gbmcv_h11}
+\NormalTok{gbmcv_h04}
+\NormalTok{gbmcv_h0411}
+\NormalTok{gbmcv_d11}
+\NormalTok{gbmcv_d04}
+\NormalTok{gbmcv_d0411}
+
+\NormalTok{## GBM 5-fold gbm tests--reduced variable list set.seed(3766716) gbmcv_h11r}
+\NormalTok{## <- lapply(1:10, function(num_var) \{ var <-}
+\NormalTok{## as.character(summary(gbm_h11b)[1:num_var,1]) gbmCV(x[,var,drop=F], h11,}
+\NormalTok{## folds_h11, tree_inc=1000, sh=.01) \}) gbmcv_h04r <- lapply(1:10,}
+\NormalTok{## function(num_var) \{ var <- as.character(summary(gbm_h04b)[1:num_var,1])}
+\NormalTok{## gbmCV(x[,var,drop=F], h04, folds_h04, tree_inc=1000, sh=.01) \})}
+\NormalTok{## gbmcv_h0411r <- lapply(1:10, function(num_var) \{ var <-}
+\NormalTok{## as.character(summary(gbm_h0411b)[1:num_var,1]) gbmCV(x[,var,drop=F],}
+\NormalTok{## h0411, folds_h0411, tree_inc=1000, sh=.01) \}) gbmcv_d11r <- lapply(1:10,}
+\NormalTok{## function(num_var) \{ var <- as.character(summary(gbm_d11b)[1:num_var,1])}
+\NormalTok{## gbmCV(x[,var,drop=F], d11, folds_d11, tree_inc=1000, sh=.01) \}) gbmcv_d04r}
+\NormalTok{## <- lapply(1:10, function(num_var) \{ var <-}
+\NormalTok{## as.character(summary(gbm_d04b)[1:num_var,1]) gbmCV(x[,var,drop=F], d04,}
+\NormalTok{## folds_d04, tree_inc=1000, sh=.01) \}) gbmcv_d0411r <- lapply(1:10,}
+\NormalTok{## function(num_var) \{ var <- as.character(summary(gbm_d0411b)[1:num_var,1])}
+\NormalTok{## gbmCV(x[,var,drop=F], d0411, folds_d0411, tree_inc=1000, sh=.01) \})}
+\NormalTok{## save(gbmcv_h11r, gbmcv_h04r, gbmcv_h0411r, gbmcv_d11r, gbmcv_d04r,}
+\NormalTok{## gbmcv_d0411r, file='/mnt/DATA/Main/Spring}
+\NormalTok{## 2015/998/Proj2/models/gbmcvr.rda')}
+\KeywordTok{load}\NormalTok{(}\StringTok{"/mnt/DATA/Main/Spring 2015/998/Proj2/models/gbmcvr.rda"}\NormalTok{)}
+\NormalTok{gbmcv_h11r}
+\NormalTok{gbmcv_h04r}
+\NormalTok{gbmcv_h0411r}
+\NormalTok{gbmcv_d11r}
+\NormalTok{gbmcv_d04r}
+\NormalTok{gbmcv_d0411r}
+
+\NormalTok{## GBM 5-fold cross validation--Framingham variables gbmcv_h11fram <-}
+\NormalTok{## gbmCV(x[,framvar11], h11, folds_h11, tree_inc=1000, sh=.01) gbmcv_h04fram}
+\NormalTok{## <- gbmCV(x[,framvar04], h04, folds_h04, tree_inc=1000, sh=.01)}
+\NormalTok{## gbmcv_h0411fram <- gbmCV(x[,framvar04], h0411, folds_h0411, tree_inc=1000,}
+\NormalTok{## sh=.01) gbmcv_d11fram <- gbmCV(x[,framvar11], d11, folds_d11,}
+\NormalTok{## tree_inc=1000, sh=.01) gbmcv_d04fram <- gbmCV(x[,framvar04], d04,}
+\NormalTok{## folds_d04, tree_inc=1000, sh=.01) gbmcv_d0411fram <- gbmCV(x[,framvar04],}
+\NormalTok{## d0411, folds_d0411, tree_inc=1000, sh=.01) save(gbmcv_h11fram,}
+\NormalTok{## gbmcv_h04fram, gbmcv_h0411fram, gbmcv_d11fram, gbmcv_d04fram,}
+\NormalTok{## gbmcv_d0411fram, file='/mnt/DATA/Main/Spring}
+\NormalTok{## 2015/998/Proj2/models/gbmcvfram.rda')}
+\KeywordTok{load}\NormalTok{(}\StringTok{"/mnt/DATA/Main/Spring 2015/998/Proj2/models/gbmcvfram.rda"}\NormalTok{)}
+\NormalTok{gbmcv_h11fram}
+\NormalTok{gbmcv_h04fram}
+\NormalTok{gbmcv_h0411fram}
+\NormalTok{gbmcv_d11fram}
+\NormalTok{gbmcv_d04fram}
+\NormalTok{gbmcv_d0411fram}
+
+\NormalTok{## GBM plot cross validation results}
+\NormalTok{getMean <-}\StringTok{ }\NormalTok{function(x) }\KeywordTok{mean}\NormalTok{(x[, }\StringTok{"auc"}\NormalTok{])}
+\NormalTok{getMin <-}\StringTok{ }\NormalTok{function(x) }\KeywordTok{min}\NormalTok{(x[, }\StringTok{"auc"}\NormalTok{])}
+\NormalTok{getMax <-}\StringTok{ }\NormalTok{function(x) }\KeywordTok{max}\NormalTok{(x[, }\StringTok{"auc"}\NormalTok{])}
+\NormalTok{gbm_plotdata <-}\StringTok{ }\KeywordTok{data.frame}\NormalTok{(}\DataTypeTok{resp =} \KeywordTok{factor}\NormalTok{(}\KeywordTok{rep}\NormalTok{(}\KeywordTok{c}\NormalTok{(}\StringTok{"HAC 2011"}\NormalTok{, }\StringTok{"HAC 2004"}\NormalTok{, }\StringTok{"HAC 2004-2011"}\NormalTok{, }
+    \StringTok{"doc 2011"}\NormalTok{, }\StringTok{"doc 2004"}\NormalTok{, }\StringTok{"doc 2004-2011"}\NormalTok{), }\DataTypeTok{each =} \DecValTok{12}\NormalTok{), }\DataTypeTok{levels =} \KeywordTok{c}\NormalTok{(}\StringTok{"HAC 2011"}\NormalTok{, }
+    \StringTok{"HAC 2004"}\NormalTok{, }\StringTok{"HAC 2004-2011"}\NormalTok{, }\StringTok{"doc 2011"}\NormalTok{, }\StringTok{"doc 2004"}\NormalTok{, }\StringTok{"doc 2004-2011"}\NormalTok{)), }
+    \DataTypeTok{Variables =} \KeywordTok{factor}\NormalTok{(}\KeywordTok{rep}\NormalTok{(}\KeywordTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{:}\DecValTok{10}\NormalTok{, }\DecValTok{304}\NormalTok{, }\StringTok{"Fram"}\NormalTok{), }\DecValTok{6}\NormalTok{), }\DataTypeTok{levels =} \KeywordTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{:}\DecValTok{10}\NormalTok{, }\DecValTok{304}\NormalTok{, }\StringTok{"Fram"}\NormalTok{)), }
+    \DataTypeTok{AUC =} \KeywordTok{c}\NormalTok{(}\KeywordTok{sapply}\NormalTok{(gbmcv_h11r, getMean), }\KeywordTok{getMean}\NormalTok{(gbmcv_h11), }\KeywordTok{getMean}\NormalTok{(gbmcv_h11fram), }
+        \KeywordTok{sapply}\NormalTok{(gbmcv_h04r, getMean), }\KeywordTok{getMean}\NormalTok{(gbmcv_h04), }\KeywordTok{getMean}\NormalTok{(gbmcv_h04fram), }
+        \KeywordTok{sapply}\NormalTok{(gbmcv_h0411r, getMean), }\KeywordTok{getMean}\NormalTok{(gbmcv_h0411), }\KeywordTok{getMean}\NormalTok{(gbmcv_h0411fram), }
+        \KeywordTok{sapply}\NormalTok{(gbmcv_d11r, getMean), }\KeywordTok{getMean}\NormalTok{(gbmcv_d11), }\KeywordTok{getMean}\NormalTok{(gbmcv_d11fram), }
+        \KeywordTok{sapply}\NormalTok{(gbmcv_d04r, getMean), }\KeywordTok{getMean}\NormalTok{(gbmcv_d04), }\KeywordTok{getMean}\NormalTok{(gbmcv_d04fram), }
+        \KeywordTok{sapply}\NormalTok{(gbmcv_d0411r, getMean), }\KeywordTok{getMean}\NormalTok{(gbmcv_d0411), }\KeywordTok{getMean}\NormalTok{(gbmcv_d0411fram)), }
+    \DataTypeTok{min =} \KeywordTok{c}\NormalTok{(}\KeywordTok{sapply}\NormalTok{(gbmcv_h11r, getMin), }\KeywordTok{getMin}\NormalTok{(gbmcv_h11), }\KeywordTok{getMin}\NormalTok{(gbmcv_h11fram), }
+        \KeywordTok{sapply}\NormalTok{(gbmcv_h04r, getMin), }\KeywordTok{getMin}\NormalTok{(gbmcv_h04), }\KeywordTok{getMin}\NormalTok{(gbmcv_h04fram), }
+        \KeywordTok{sapply}\NormalTok{(gbmcv_h0411r, getMin), }\KeywordTok{getMin}\NormalTok{(gbmcv_h0411), }\KeywordTok{getMin}\NormalTok{(gbmcv_h0411fram), }
+        \KeywordTok{sapply}\NormalTok{(gbmcv_d11r, getMin), }\KeywordTok{getMin}\NormalTok{(gbmcv_d11), }\KeywordTok{getMin}\NormalTok{(gbmcv_d11fram), }
+        \KeywordTok{sapply}\NormalTok{(gbmcv_d04r, getMin), }\KeywordTok{getMin}\NormalTok{(gbmcv_d04), }\KeywordTok{getMin}\NormalTok{(gbmcv_d04fram), }
+        \KeywordTok{sapply}\NormalTok{(gbmcv_d0411r, getMin), }\KeywordTok{getMin}\NormalTok{(gbmcv_d0411), }\KeywordTok{getMin}\NormalTok{(gbmcv_d0411fram)), }
+    \DataTypeTok{max =} \KeywordTok{c}\NormalTok{(}\KeywordTok{sapply}\NormalTok{(gbmcv_h11r, getMax), }\KeywordTok{getMax}\NormalTok{(gbmcv_h11), }\KeywordTok{getMax}\NormalTok{(gbmcv_h11fram), }
+        \KeywordTok{sapply}\NormalTok{(gbmcv_h04r, getMax), }\KeywordTok{getMax}\NormalTok{(gbmcv_h04), }\KeywordTok{getMax}\NormalTok{(gbmcv_h04fram), }
+        \KeywordTok{sapply}\NormalTok{(gbmcv_h0411r, getMax), }\KeywordTok{getMax}\NormalTok{(gbmcv_h0411), }\KeywordTok{getMax}\NormalTok{(gbmcv_h0411fram), }
+        \KeywordTok{sapply}\NormalTok{(gbmcv_d11r, getMax), }\KeywordTok{getMax}\NormalTok{(gbmcv_d11), }\KeywordTok{getMax}\NormalTok{(gbmcv_d11fram), }
+        \KeywordTok{sapply}\NormalTok{(gbmcv_d04r, getMax), }\KeywordTok{getMax}\NormalTok{(gbmcv_d04), }\KeywordTok{getMax}\NormalTok{(gbmcv_d04fram), }
+        \KeywordTok{sapply}\NormalTok{(gbmcv_d0411r, getMax), }\KeywordTok{getMax}\NormalTok{(gbmcv_d0411), }\KeywordTok{getMax}\NormalTok{(gbmcv_d0411fram)))}
+
+\CommentTok{# pdf('/mnt/DATA/Main/Spring 2015/998/Proj2/plots/gbm all cv.pdf')}
+\CommentTok{# ggplot(gbm_plotdata, aes(y=AUC, x=Variables)) + geom_point(size=3) +}
+\CommentTok{# geom_errorbar(aes(y=AUC, ymin=min, ymax=max)) + facet_wrap(~resp) +}
+\CommentTok{# theme(strip.text=element_text(size=18), axis.text=element_text(angle=90,}
+\CommentTok{# color='black', size=12), axis.title=element_text(size=12)) + ylim(.4,.85)}
+\CommentTok{# dev.off()}
+
+
+\NormalTok{#### RPART Classification Trees}
+
+\NormalTok{## modified rpart.prune function to allow deviance and minsplit based pruning}
+\NormalTok{## method can be 'cp', 'dev_quantile', 'minsplit' prunes values strictly <}
+\NormalTok{## pruneval (not <= as in prune.rpart)}
+\NormalTok{myprune.rpart <-}\StringTok{ }\NormalTok{function(tree, method, prune_val, ...) \{}
+    \NormalTok{ff <-}\StringTok{ }\NormalTok{tree$frame}
+    \NormalTok{id <-}\StringTok{ }\KeywordTok{as.integer}\NormalTok{(}\KeywordTok{row.names}\NormalTok{(ff))}
+    \NormalTok{## my lines}
+    \NormalTok{if (method ==}\StringTok{ "cp"}\NormalTok{) \{}
+        \NormalTok{toss <-}\StringTok{ }\NormalTok{id[ff$complexity <}\StringTok{ }\NormalTok{prune_val &}\StringTok{ }\NormalTok{ff$var !=}\StringTok{ "<leaf>"}\NormalTok{]  }\CommentTok{#not a leaf}
+    \NormalTok{\} else if (method ==}\StringTok{ "dev"}\NormalTok{) \{}
+        \NormalTok{ss <-}\StringTok{ }\NormalTok{tree$splits  }\CommentTok{# according to rpart.object doc, 'improve' refers to deviance}
+        \NormalTok{ss_id <-}\StringTok{ }\KeywordTok{cumsum}\NormalTok{(ff$var !=}\StringTok{ "<leaf>"}\NormalTok{) +}\StringTok{ }\KeywordTok{c}\NormalTok{(}\DecValTok{0}\NormalTok{, }\KeywordTok{head}\NormalTok{(}\KeywordTok{cumsum}\NormalTok{(ff$ncompete +}\StringTok{ }
+\StringTok{            }\NormalTok{ff$nsurrogate), -}\DecValTok{1}\NormalTok{))}
+        \NormalTok{imp <-}\StringTok{ }\NormalTok{ss[ss_id, }\StringTok{"improve"}\NormalTok{]}
+        \NormalTok{imp[ff$var ==}\StringTok{ "<leaf>"}\NormalTok{] <-}\StringTok{ }\OtherTok{NA}  \CommentTok{# NA for terminal nodes}
+        \CommentTok{# dev_cutoff <- quantile(imp, prune_val, na.rm=T) toss <- id[imp <}
+        \CommentTok{# dev_cutoff & ff$var != '<leaf>'] #not a leaf}
+        \NormalTok{toss <-}\StringTok{ }\NormalTok{id[imp <}\StringTok{ }\NormalTok{prune_val &}\StringTok{ }\NormalTok{ff$var !=}\StringTok{ "<leaf>"}\NormalTok{]  }\CommentTok{#not a leaf}
+    \NormalTok{\} else if (method ==}\StringTok{ "minsplit"}\NormalTok{) \{}
+        \NormalTok{toss <-}\StringTok{ }\NormalTok{id[ff$n <}\StringTok{ }\NormalTok{prune_val &}\StringTok{ }\NormalTok{ff$var !=}\StringTok{ "<leaf>"}\NormalTok{]}
+    \NormalTok{\}}
+    \NormalTok{if (}\KeywordTok{length}\NormalTok{(toss) ==}\StringTok{ }\NormalTok{0L) }
+        \KeywordTok{return}\NormalTok{(tree)  }\CommentTok{# all the tree is retained}
+    \NormalTok{newx <-}\StringTok{ }\KeywordTok{snip.rpart}\NormalTok{(tree, toss)}
+    \NormalTok{## Now cut down the CP table temp <- pmax(tree$cptable[, 1L], cp) keep <-}
+    \NormalTok{## match(unique(temp), temp) newx$cptable <- tree$cptable[keep, , drop =}
+    \NormalTok{## FALSE] newx$cptable[max(keep), 1L] <- cp # Reset the variable importance}
+    \NormalTok{## newx$variable.importance <- importance(newx)}
+    \NormalTok{newx$cptable <-}\StringTok{ }\OtherTok{NULL}
+    \NormalTok{newx$variable.importance <-}\StringTok{ }\OtherTok{NULL}
+    \NormalTok{newx}
+\NormalTok{\}}
+
+\NormalTok{## function to determine optimal pruning parameter from cross validation}
+\NormalTok{## Returns 3 lists (cp, dev, minsplit). Each list has length = # cross}
+\NormalTok{## validation folds.  Each list element is a table with dev, devmod, mse,}
+\NormalTok{## misclass, auc for each pruning value no cp_vals needed: uses the values}
+\NormalTok{## from $cptable}
+\NormalTok{rpartPruneCV <-}\StringTok{ }\NormalTok{function(x, y, folds, }\DataTypeTok{split =} \StringTok{"gini"}\NormalTok{, }\DataTypeTok{cp =} \NormalTok{-}\DecValTok{1}\NormalTok{, }\DataTypeTok{cp_quantiles =} \KeywordTok{seq}\NormalTok{(}\DecValTok{0}\NormalTok{, }
+    \DecValTok{1}\NormalTok{, }\FloatTok{0.01}\NormalTok{), }\DataTypeTok{dev_quantiles =} \KeywordTok{seq}\NormalTok{(}\DecValTok{0}\NormalTok{, }\DecValTok{1}\NormalTok{, }\FloatTok{0.01}\NormalTok{), }\DataTypeTok{minsplit_quantiles =} \KeywordTok{seq}\NormalTok{(}\DecValTok{0}\NormalTok{, }\DecValTok{1}\NormalTok{, }
+    \FloatTok{0.01}\NormalTok{)) \{}
+    
+    \NormalTok{dev <-}\StringTok{ }\NormalTok{function(p, y) -}\KeywordTok{mean}\NormalTok{(}\KeywordTok{ifelse}\NormalTok{(y ==}\StringTok{ }\DecValTok{1}\NormalTok{, }\KeywordTok{log}\NormalTok{(p), }\KeywordTok{log}\NormalTok{(}\DecValTok{1} \NormalTok{-}\StringTok{ }\NormalTok{p)))}
+    \NormalTok{devmod <-}\StringTok{ }\NormalTok{function(p, y) }\KeywordTok{dev}\NormalTok{(}\KeywordTok{pmin}\NormalTok{(}\KeywordTok{pmax}\NormalTok{(p, }\FloatTok{0.001}\NormalTok{), }\FloatTok{0.999}\NormalTok{), y)}
+    \NormalTok{mse <-}\StringTok{ }\NormalTok{function(p, y) }\KeywordTok{mean}\NormalTok{((y -}\StringTok{ }\NormalTok{p)^}\DecValTok{2}\NormalTok{)}
+    \NormalTok{misclass <-}\StringTok{ }\NormalTok{function(p, y) }\KeywordTok{mean}\NormalTok{(}\KeywordTok{abs}\NormalTok{((p >}\StringTok{ }\FloatTok{0.5}\NormalTok{) -}\StringTok{ }\NormalTok{y))}
+    \NormalTok{getAUC <-}\StringTok{ }\NormalTok{function(p, y) }\KeywordTok{auc}\NormalTok{(y, p)}
+    
+    \NormalTok{cv_fun <-}\StringTok{ }\NormalTok{function(rpart_fit, method, prune_val) \{}
+        \NormalTok{rpart_prune <-}\StringTok{ }\KeywordTok{myprune.rpart}\NormalTok{(rpart_fit, }\DataTypeTok{method =} \NormalTok{method, }\DataTypeTok{prune_val =} \NormalTok{prune_val)}
+        \NormalTok{pred <-}\StringTok{ }\KeywordTok{predict}\NormalTok{(rpart_prune, }\DataTypeTok{newdata =} \NormalTok{xtest)[, }\DecValTok{2}\NormalTok{]}
+        \NormalTok{dev <-}\StringTok{ }\KeywordTok{dev}\NormalTok{(pred, ytest)}
+        \NormalTok{devmod <-}\StringTok{ }\KeywordTok{devmod}\NormalTok{(pred, ytest)}
+        \NormalTok{mse <-}\StringTok{ }\KeywordTok{mse}\NormalTok{(pred, ytest)}
+        \NormalTok{misclass <-}\StringTok{ }\KeywordTok{misclass}\NormalTok{(pred, ytest)}
+        \NormalTok{auc <-}\StringTok{ }\KeywordTok{getAUC}\NormalTok{(pred, ytest)}
+        \KeywordTok{c}\NormalTok{(}\DataTypeTok{dev =} \NormalTok{dev, }\DataTypeTok{devmod =} \NormalTok{devmod, }\DataTypeTok{mse =} \NormalTok{mse, }\DataTypeTok{misclass =} \NormalTok{misclass, }\DataTypeTok{auc =} \NormalTok{auc)}
+    \NormalTok{\}}
+    
+    \NormalTok{rpart_trainfit <-}\StringTok{ }\KeywordTok{list}\NormalTok{()}
+    \NormalTok{for (i in }\DecValTok{1}\NormalTok{:}\KeywordTok{length}\NormalTok{(folds)) \{}
+        \NormalTok{train_id <-}\StringTok{ }\KeywordTok{Reduce}\NormalTok{(union, folds[-i])}
+        \NormalTok{xtrain <-}\StringTok{ }\NormalTok{x[train_id, , drop =}\StringTok{ }\NormalTok{F]}
+        \NormalTok{ytrain <-}\StringTok{ }\NormalTok{y[train_id]}
+        \NormalTok{rpart_trainfit[[i]] <-}\StringTok{ }\KeywordTok{rpart}\NormalTok{(ytrain ~}\StringTok{ }\NormalTok{., }\DataTypeTok{data =} \NormalTok{xtrain, }\DataTypeTok{method =} \StringTok{"class"}\NormalTok{, }
+            \DataTypeTok{parms =} \KeywordTok{list}\NormalTok{(}\DataTypeTok{split =} \NormalTok{split), }\DataTypeTok{control =} \KeywordTok{rpart.control}\NormalTok{(}\DataTypeTok{maxsurrogate =} \DecValTok{100}\NormalTok{, }
+                \DataTypeTok{cp =} \NormalTok{cp))}
+    \NormalTok{\}}
+    \NormalTok{allcp <-}\StringTok{ }\KeywordTok{unlist}\NormalTok{(}\KeywordTok{lapply}\NormalTok{(rpart_trainfit, function(x) x$frame$complexity[x$frame$var !=}\StringTok{ }
+\StringTok{        "<leaf>"}\NormalTok{]))}
+    \NormalTok{alldev <-}\StringTok{ }\KeywordTok{unlist}\NormalTok{(}\KeywordTok{lapply}\NormalTok{(rpart_trainfit, function(x) \{}
+        \NormalTok{ff <-}\StringTok{ }\NormalTok{x$frame}
+        \NormalTok{ss <-}\StringTok{ }\NormalTok{x$splits  }\CommentTok{# according to rpart.object doc, 'improve' refers to deviance}
+        \NormalTok{ss_id <-}\StringTok{ }\KeywordTok{cumsum}\NormalTok{(ff$var !=}\StringTok{ "<leaf>"}\NormalTok{) +}\StringTok{ }\KeywordTok{c}\NormalTok{(}\DecValTok{0}\NormalTok{, }\KeywordTok{head}\NormalTok{(}\KeywordTok{cumsum}\NormalTok{(ff$ncompete +}\StringTok{ }
+\StringTok{            }\NormalTok{ff$nsurrogate), -}\DecValTok{1}\NormalTok{))}
+        \NormalTok{imp <-}\StringTok{ }\NormalTok{ss[ss_id, }\StringTok{"improve"}\NormalTok{]}
+        \NormalTok{imp[ff$var !=}\StringTok{ "<leaf>"}\NormalTok{]}
+    \NormalTok{\}))}
+    \NormalTok{allleafsize <-}\StringTok{ }\KeywordTok{unlist}\NormalTok{(}\KeywordTok{lapply}\NormalTok{(rpart_trainfit, function(x) x$frame$n[x$frame$var !=}\StringTok{ }
+\StringTok{        "<leaf>"}\NormalTok{]))}
+    \NormalTok{cp_vals <-}\StringTok{ }\KeywordTok{quantile}\NormalTok{(allcp, cp_quantiles)}
+    \NormalTok{dev_vals <-}\StringTok{ }\KeywordTok{quantile}\NormalTok{(alldev, dev_quantiles)}
+    \NormalTok{minsplit_vals <-}\StringTok{ }\KeywordTok{quantile}\NormalTok{(allleafsize, minsplit_quantiles)}
+    
+    \NormalTok{cv <-}\StringTok{ }\KeywordTok{list}\NormalTok{()}
+    \NormalTok{cv$cp <-}\StringTok{ }\KeywordTok{list}\NormalTok{()}
+    \NormalTok{cv$dev <-}\StringTok{ }\KeywordTok{list}\NormalTok{()}
+    \NormalTok{cv$minsplit <-}\StringTok{ }\KeywordTok{list}\NormalTok{()}
+    \NormalTok{for (i in }\DecValTok{1}\NormalTok{:}\KeywordTok{length}\NormalTok{(folds)) \{}
+        \NormalTok{test_id <-}\StringTok{ }\NormalTok{folds[[i]]}
+        \NormalTok{xtest <-}\StringTok{ }\NormalTok{x[test_id, , drop =}\StringTok{ }\NormalTok{F]}
+        \NormalTok{ytest <-}\StringTok{ }\NormalTok{y[test_id]}
+        \NormalTok{test_loss <-}\StringTok{ }\KeywordTok{t}\NormalTok{(}\KeywordTok{sapply}\NormalTok{(cp_vals, function(v) }\KeywordTok{cv_fun}\NormalTok{(rpart_trainfit[[i]], }
+            \StringTok{"cp"}\NormalTok{, v)))}
+        \NormalTok{cv$cp[[i]] <-}\StringTok{ }\KeywordTok{cbind}\NormalTok{(cp_vals, test_loss)}
+        \NormalTok{test_loss <-}\StringTok{ }\KeywordTok{t}\NormalTok{(}\KeywordTok{sapply}\NormalTok{(dev_vals, function(v) }\KeywordTok{cv_fun}\NormalTok{(rpart_trainfit[[i]], }
+            \StringTok{"dev"}\NormalTok{, v)))}
+        \NormalTok{cv$dev[[i]] <-}\StringTok{ }\KeywordTok{cbind}\NormalTok{(dev_vals, test_loss)}
+        \NormalTok{test_loss <-}\StringTok{ }\KeywordTok{t}\NormalTok{(}\KeywordTok{sapply}\NormalTok{(minsplit_vals, function(v) }\KeywordTok{cv_fun}\NormalTok{(rpart_trainfit[[i]], }
+            \StringTok{"minsplit"}\NormalTok{, v)))}
+        \NormalTok{cv$minsplit[[i]] <-}\StringTok{ }\KeywordTok{cbind}\NormalTok{(minsplit_vals, test_loss)}
+    \NormalTok{\}}
+    \NormalTok{cv}
+\NormalTok{\}}
+
+\NormalTok{## function to get optimal pruning value from rpartcv table}
+\NormalTok{getPruneValBest <-}\StringTok{ }\NormalTok{function(rpartcv, cv_method, prune_method, }\DataTypeTok{se_buffer =} \DecValTok{1}\NormalTok{) \{}
+    \NormalTok{prune_vals <-}\StringTok{ }\KeywordTok{sapply}\NormalTok{(rpartcv[[prune_method]], function(x) x[, }\DecValTok{1}\NormalTok{])}
+    \NormalTok{cv_loss <-}\StringTok{ }\KeywordTok{sapply}\NormalTok{(rpartcv[[prune_method]], function(x) x[, cv_method])}
+    \NormalTok{cv_loss_mean <-}\StringTok{ }\KeywordTok{rowMeans}\NormalTok{(cv_loss) *}\StringTok{ }\NormalTok{-(cv_method ==}\StringTok{ "auc"}\NormalTok{)  }\CommentTok{# negative auc is a loss function}
+    \NormalTok{cv_loss_se <-}\StringTok{ }\KeywordTok{apply}\NormalTok{(cv_loss, }\DecValTok{1}\NormalTok{, sd)/}\KeywordTok{sqrt}\NormalTok{(}\KeywordTok{ncol}\NormalTok{(cv_loss))}
+    \NormalTok{cv_min <-}\StringTok{ }\KeywordTok{min}\NormalTok{(cv_loss_mean)}
+    \NormalTok{prune_vals[}\KeywordTok{max}\NormalTok{(}\KeywordTok{which}\NormalTok{(cv_loss_mean -}\StringTok{ }\NormalTok{se_buffer *}\StringTok{ }\NormalTok{cv_loss_se <=}\StringTok{ }\NormalTok{cv_min))]}
+\NormalTok{\}}
+
+\NormalTok{## function to get cross validation deviance, modified deviance, mse,}
+\NormalTok{## misclassification rate, auc uses rpartPruneCV to select pruning parameter}
+\NormalTok{## by within-fold cross validation}
+\NormalTok{## cv_method=c('none','dev','devmod','mse','misclass','auc')}
+\NormalTok{rpartCV <-}\StringTok{ }\NormalTok{function(x, y, folds, }\DataTypeTok{cv_method =} \StringTok{"auc"}\NormalTok{, }\DataTypeTok{split =} \StringTok{"gini"}\NormalTok{, }\DataTypeTok{cp =} \NormalTok{-}\DecValTok{1}\NormalTok{, }
+    \DataTypeTok{cp_quantiles =} \KeywordTok{seq}\NormalTok{(}\DecValTok{0}\NormalTok{, }\DecValTok{1}\NormalTok{, }\FloatTok{0.01}\NormalTok{), }\DataTypeTok{dev_quantiles =} \KeywordTok{seq}\NormalTok{(}\DecValTok{0}\NormalTok{, }\DecValTok{1}\NormalTok{, }\FloatTok{0.01}\NormalTok{), }\DataTypeTok{minsplit_quantiles =} \KeywordTok{seq}\NormalTok{(}\DecValTok{0}\NormalTok{, }
+        \DecValTok{1}\NormalTok{, }\FloatTok{0.01}\NormalTok{)) \{}
+    
+    \NormalTok{getDev <-}\StringTok{ }\NormalTok{function(p, y) -}\KeywordTok{mean}\NormalTok{(}\KeywordTok{ifelse}\NormalTok{(y ==}\StringTok{ }\DecValTok{1}\NormalTok{, }\KeywordTok{log}\NormalTok{(p), }\KeywordTok{log}\NormalTok{(}\DecValTok{1} \NormalTok{-}\StringTok{ }\NormalTok{p)))}
+    \NormalTok{getDevmod <-}\StringTok{ }\NormalTok{function(p, y) }\KeywordTok{getDev}\NormalTok{(}\KeywordTok{pmin}\NormalTok{(}\KeywordTok{pmax}\NormalTok{(p, }\FloatTok{0.001}\NormalTok{), }\FloatTok{0.999}\NormalTok{), y)}
+    \NormalTok{getMse <-}\StringTok{ }\NormalTok{function(p, y) }\KeywordTok{mean}\NormalTok{((y -}\StringTok{ }\NormalTok{p)^}\DecValTok{2}\NormalTok{)}
+    \NormalTok{getMisclass <-}\StringTok{ }\NormalTok{function(p, y) }\KeywordTok{mean}\NormalTok{(}\KeywordTok{abs}\NormalTok{((p >}\StringTok{ }\FloatTok{0.5}\NormalTok{) -}\StringTok{ }\NormalTok{y))}
+    \NormalTok{getAUC <-}\StringTok{ }\NormalTok{function(p, y) }\KeywordTok{auc}\NormalTok{(y, p)}
+    
+    \NormalTok{cv <-}\StringTok{ }\KeywordTok{list}\NormalTok{()}
+    \NormalTok{cv$cp <-}\StringTok{ }\KeywordTok{matrix}\NormalTok{(}\DataTypeTok{nrow =} \KeywordTok{length}\NormalTok{(folds), }\DataTypeTok{ncol =} \DecValTok{6}\NormalTok{)}
+    \NormalTok{cv$dev <-}\StringTok{ }\KeywordTok{matrix}\NormalTok{(}\DataTypeTok{nrow =} \KeywordTok{length}\NormalTok{(folds), }\DataTypeTok{ncol =} \DecValTok{6}\NormalTok{)}
+    \NormalTok{cv$minsplit <-}\StringTok{ }\KeywordTok{matrix}\NormalTok{(}\DataTypeTok{nrow =} \KeywordTok{length}\NormalTok{(folds), }\DataTypeTok{ncol =} \DecValTok{6}\NormalTok{)}
+    \NormalTok{for (i in }\DecValTok{1}\NormalTok{:}\KeywordTok{length}\NormalTok{(folds)) \{}
+        \NormalTok{train_id <-}\StringTok{ }\KeywordTok{Reduce}\NormalTok{(union, folds[-i])}
+        \NormalTok{test_id <-}\StringTok{ }\NormalTok{folds[[i]]}
+        \NormalTok{xtrain <-}\StringTok{ }\NormalTok{x[train_id, , drop =}\StringTok{ }\NormalTok{F]}
+        \NormalTok{ytrain <-}\StringTok{ }\NormalTok{y[train_id]}
+        \NormalTok{xtest <-}\StringTok{ }\NormalTok{x[test_id, , drop =}\StringTok{ }\NormalTok{F]}
+        \NormalTok{ytest <-}\StringTok{ }\NormalTok{y[test_id]}
+        \NormalTok{if (cv_method ==}\StringTok{ "none"}\NormalTok{) \{}
+            \NormalTok{prune_val_best <-}\StringTok{ }\NormalTok{cp}
+        \NormalTok{\} else \{}
+            \NormalTok{folds_tune <-}\StringTok{ }\KeywordTok{createFolds}\NormalTok{(}\DecValTok{1}\NormalTok{:}\KeywordTok{length}\NormalTok{(ytrain), }\DataTypeTok{k =} \DecValTok{5}\NormalTok{, }\DataTypeTok{list =} \NormalTok{T, }\DataTypeTok{returnTrain =} \NormalTok{F)}
+            \NormalTok{rpart_tune <-}\StringTok{ }\KeywordTok{rpartPruneCV}\NormalTok{(xtrain, ytrain, folds_tune, split, cp, }
+                \NormalTok{cp_quantiles, dev_quantiles, minsplit_quantiles)}
+            \NormalTok{cp_prune_val_best <-}\StringTok{ }\KeywordTok{getPruneValBest}\NormalTok{(rpart_tune, cv_method, }\StringTok{"cp"}\NormalTok{)}
+            \NormalTok{dev_prune_val_best <-}\StringTok{ }\KeywordTok{getPruneValBest}\NormalTok{(rpart_tune, cv_method, }\StringTok{"dev"}\NormalTok{)}
+            \NormalTok{minsplit_prune_val_best <-}\StringTok{ }\KeywordTok{getPruneValBest}\NormalTok{(rpart_tune, cv_method, }
+                \StringTok{"minsplit"}\NormalTok{)}
+        \NormalTok{\}}
+        \NormalTok{rpart_train <-}\StringTok{ }\KeywordTok{rpart}\NormalTok{(ytrain ~}\StringTok{ }\NormalTok{., }\DataTypeTok{data =} \NormalTok{xtrain, }\DataTypeTok{method =} \StringTok{"class"}\NormalTok{, }\DataTypeTok{parms =} \KeywordTok{list}\NormalTok{(}\DataTypeTok{split =} \NormalTok{split), }
+            \DataTypeTok{control =} \KeywordTok{rpart.control}\NormalTok{(}\DataTypeTok{maxsurrogate =} \DecValTok{100}\NormalTok{, }\DataTypeTok{cp =} \NormalTok{cp))}
+        \NormalTok{## once for cp}
+        \NormalTok{rpart_prune <-}\StringTok{ }\KeywordTok{myprune.rpart}\NormalTok{(rpart_train, }\DataTypeTok{method =} \StringTok{"cp"}\NormalTok{, }\DataTypeTok{prune_val =} \NormalTok{cp_prune_val_best)}
+        \NormalTok{pred <-}\StringTok{ }\KeywordTok{predict}\NormalTok{(rpart_prune, }\DataTypeTok{newdata =} \NormalTok{xtest)[, }\DecValTok{2}\NormalTok{]}
+        \NormalTok{dev <-}\StringTok{ }\KeywordTok{getDev}\NormalTok{(pred, ytest)}
+        \NormalTok{devmod <-}\StringTok{ }\KeywordTok{getDevmod}\NormalTok{(pred, ytest)}
+        \NormalTok{mse <-}\StringTok{ }\KeywordTok{getMse}\NormalTok{(pred, ytest)}
+        \NormalTok{misclass <-}\StringTok{ }\KeywordTok{getMisclass}\NormalTok{(pred, ytest)}
+        \NormalTok{auc1 <-}\StringTok{ }\KeywordTok{getAUC}\NormalTok{(pred, ytest)}
+        \NormalTok{cv$cp[i, ] <-}\StringTok{ }\KeywordTok{c}\NormalTok{(dev, devmod, mse, misclass, auc1, cp_prune_val_best)}
+        \NormalTok{## once for dev}
+        \NormalTok{rpart_prune <-}\StringTok{ }\KeywordTok{myprune.rpart}\NormalTok{(rpart_train, }\DataTypeTok{method =} \StringTok{"dev"}\NormalTok{, }\DataTypeTok{prune_val =} \NormalTok{dev_prune_val_best)}
+        \NormalTok{pred <-}\StringTok{ }\KeywordTok{predict}\NormalTok{(rpart_prune, }\DataTypeTok{newdata =} \NormalTok{xtest)[, }\DecValTok{2}\NormalTok{]}
+        \NormalTok{dev <-}\StringTok{ }\KeywordTok{getDev}\NormalTok{(pred, ytest)}
+        \NormalTok{devmod <-}\StringTok{ }\KeywordTok{getDevmod}\NormalTok{(pred, ytest)}
+        \NormalTok{mse <-}\StringTok{ }\KeywordTok{getMse}\NormalTok{(pred, ytest)}
+        \NormalTok{misclass <-}\StringTok{ }\KeywordTok{getMisclass}\NormalTok{(pred, ytest)}
+        \NormalTok{auc1 <-}\StringTok{ }\KeywordTok{getAUC}\NormalTok{(pred, ytest)}
+        \NormalTok{cv$dev[i, ] <-}\StringTok{ }\KeywordTok{c}\NormalTok{(dev, devmod, mse, misclass, auc1, dev_prune_val_best)}
+        \NormalTok{## once for minsplit}
+        \NormalTok{rpart_prune <-}\StringTok{ }\KeywordTok{myprune.rpart}\NormalTok{(rpart_train, }\DataTypeTok{method =} \StringTok{"minsplit"}\NormalTok{, }\DataTypeTok{prune_val =} \NormalTok{minsplit_prune_val_best)}
+        \NormalTok{pred <-}\StringTok{ }\KeywordTok{predict}\NormalTok{(rpart_prune, }\DataTypeTok{newdata =} \NormalTok{xtest)[, }\DecValTok{2}\NormalTok{]}
+        \NormalTok{dev <-}\StringTok{ }\KeywordTok{getDev}\NormalTok{(pred, ytest)}
+        \NormalTok{devmod <-}\StringTok{ }\KeywordTok{getDevmod}\NormalTok{(pred, ytest)}
+        \NormalTok{mse <-}\StringTok{ }\KeywordTok{getMse}\NormalTok{(pred, ytest)}
+        \NormalTok{misclass <-}\StringTok{ }\KeywordTok{getMisclass}\NormalTok{(pred, ytest)}
+        \NormalTok{auc1 <-}\StringTok{ }\KeywordTok{getAUC}\NormalTok{(pred, ytest)}
+        \NormalTok{cv$minsplit[i, ] <-}\StringTok{ }\KeywordTok{c}\NormalTok{(dev, devmod, mse, misclass, auc1, minsplit_prune_val_best)}
+    \NormalTok{\}}
+    \KeywordTok{colnames}\NormalTok{(cv$cp) <-}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{"dev"}\NormalTok{, }\StringTok{"devmod"}\NormalTok{, }\StringTok{"mse"}\NormalTok{, }\StringTok{"misclass"}\NormalTok{, }\StringTok{"auc"}\NormalTok{, }\StringTok{"cp_best"}\NormalTok{)}
+    \KeywordTok{colnames}\NormalTok{(cv$dev) <-}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{"dev"}\NormalTok{, }\StringTok{"devmod"}\NormalTok{, }\StringTok{"mse"}\NormalTok{, }\StringTok{"misclass"}\NormalTok{, }\StringTok{"auc"}\NormalTok{, }\StringTok{"dev_best"}\NormalTok{)}
+    \KeywordTok{colnames}\NormalTok{(cv$minsplit) <-}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{"dev"}\NormalTok{, }\StringTok{"devmod"}\NormalTok{, }\StringTok{"mse"}\NormalTok{, }\StringTok{"misclass"}\NormalTok{, }\StringTok{"auc"}\NormalTok{, }\StringTok{"minsplit_best"}\NormalTok{)}
+    \NormalTok{cv}
+\NormalTok{\}}
+
+\NormalTok{#### RPART cross validation tests}
+
+\CommentTok{# set.seed(4938868) ## all variables rpartcv_h11 <- rpartCV(x1, h11,}
+\CommentTok{# folds_h11) rpartcv_h04 <- rpartCV(x104, h04, folds_h04) rpartcv_h0411 <-}
+\CommentTok{# rpartCV(x104, h0411, folds_h0411) rpartcv_d11 <- rpartCV(x1, d11,}
+\CommentTok{# folds_d11) rpartcv_d04 <- rpartCV(x104, d04, folds_d04) rpartcv_d0411 <-}
+\CommentTok{# rpartCV(x104, d0411, folds_d0411) ## framington variables rpartcv_h11fram}
+\CommentTok{# <- rpartCV(x1[,framvar11], h11, folds_h11) rpartcv_h04fram <-}
+\CommentTok{# rpartCV(x104[,framvar04], h04, folds_h04) rpartcv_h0411fram <-}
+\CommentTok{# rpartCV(x104[,framvar04], h0411, folds_h0411) set.seed(1748405)}
+\CommentTok{# rpartcv_d11fram <- rpartCV(x1[,framvar11], d11, folds_d11) rpartcv_d04fram}
+\CommentTok{# <- rpartCV(x104[,framvar04], d04, folds_d04) rpartcv_d0411fram <-}
+\CommentTok{# rpartCV(x104[,framvar04], d0411, folds_d0411) ## top 1-10 variables}
+\CommentTok{# rpartcv_h11r <- lapply(1:10, function(num_var) \{ var <-}
+\CommentTok{# as.character(summary(gbm_h11b)[1:num_var,1]) rpartCV(x[,var,drop=F], h11,}
+\CommentTok{# folds_h11) \}) rpartcv_h04r <- lapply(1:10, function(num_var) \{ var <-}
+\CommentTok{# as.character(summary(gbm_h04b)[1:num_var,1]) rpartCV(x[,var,drop=F], h04,}
+\CommentTok{# folds_h04) \}) rpartcv_h0411r <- lapply(1:10, function(num_var) \{ var <-}
+\CommentTok{# as.character(summary(gbm_h0411b)[1:num_var,1]) rpartCV(x[,var,drop=F],}
+\CommentTok{# h0411, folds_h0411) \}) rpartcv_d11r <- lapply(1:10, function(num_var) \{}
+\CommentTok{# var <- as.character(summary(gbm_d11b)[1:num_var,1])}
+\CommentTok{# rpartCV(x[,var,drop=F], d11, folds_d11) \}) rpartcv_d04r <- lapply(1:10,}
+\CommentTok{# function(num_var) \{ var <- as.character(summary(gbm_d04b)[1:num_var,1])}
+\CommentTok{# rpartCV(x[,var,drop=F], d04, folds_d04) \}) rpartcv_d0411r <- lapply(1:10,}
+\CommentTok{# function(num_var) \{ var <- as.character(summary(gbm_d0411b)[1:num_var,1])}
+\CommentTok{# rpartCV(x[,var,drop=F], d0411, folds_d0411) \}) save(rpartcv_h11,}
+\CommentTok{# rpartcv_h04, rpartcv_h0411, rpartcv_d11, rpartcv_d04, rpartcv_d0411,}
+\CommentTok{# rpartcv_h11fram, rpartcv_h04fram, rpartcv_h0411fram, rpartcv_d11fram,}
+\CommentTok{# rpartcv_d04fram, rpartcv_d0411fram, rpartcv_h11r, rpartcv_h04r,}
+\CommentTok{# rpartcv_h0411r, rpartcv_d11r, rpartcv_d04r, rpartcv_d0411r,}
+\CommentTok{# file='/mnt/DATA/Main/Spring 2015/998/Proj2/models/rpartcv_all.rda')}
+\KeywordTok{load}\NormalTok{(}\StringTok{"/mnt/DATA/Main/Spring 2015/998/Proj2/models/rpartcv_all.rda"}\NormalTok{)}
+
+
+\NormalTok{#### plot rpart cross validation results}
+
+\NormalTok{getMean <-}\StringTok{ }\NormalTok{function(x) }\KeywordTok{mean}\NormalTok{(x[, }\StringTok{"auc"}\NormalTok{])}
+\NormalTok{getMin <-}\StringTok{ }\NormalTok{function(x) }\KeywordTok{min}\NormalTok{(x[, }\StringTok{"auc"}\NormalTok{])}
+\NormalTok{getMax <-}\StringTok{ }\NormalTok{function(x) }\KeywordTok{max}\NormalTok{(x[, }\StringTok{"auc"}\NormalTok{])}
+\NormalTok{rpartcv_cp <-}\StringTok{ }\KeywordTok{data.frame}\NormalTok{(}\DataTypeTok{resp =} \KeywordTok{factor}\NormalTok{(}\KeywordTok{rep}\NormalTok{(}\KeywordTok{c}\NormalTok{(}\StringTok{"HAC 2011"}\NormalTok{, }\StringTok{"HAC 2004"}\NormalTok{, }\StringTok{"HAC 2004-2011"}\NormalTok{, }
+    \StringTok{"doc 2011"}\NormalTok{, }\StringTok{"doc 2004"}\NormalTok{, }\StringTok{"doc 2004-2011"}\NormalTok{), }\DataTypeTok{each =} \DecValTok{12}\NormalTok{), }\DataTypeTok{levels =} \KeywordTok{c}\NormalTok{(}\StringTok{"HAC 2011"}\NormalTok{, }
+    \StringTok{"HAC 2004"}\NormalTok{, }\StringTok{"HAC 2004-2011"}\NormalTok{, }\StringTok{"doc 2011"}\NormalTok{, }\StringTok{"doc 2004"}\NormalTok{, }\StringTok{"doc 2004-2011"}\NormalTok{)), }
+    \DataTypeTok{Variables =} \KeywordTok{factor}\NormalTok{(}\KeywordTok{rep}\NormalTok{(}\KeywordTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{:}\DecValTok{10}\NormalTok{, }\DecValTok{304}\NormalTok{, }\StringTok{"Fram"}\NormalTok{), }\DecValTok{6}\NormalTok{), }\DataTypeTok{levels =} \KeywordTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{:}\DecValTok{10}\NormalTok{, }\DecValTok{304}\NormalTok{, }\StringTok{"Fram"}\NormalTok{)), }
+    \DataTypeTok{AUC =} \KeywordTok{c}\NormalTok{(}\KeywordTok{sapply}\NormalTok{(rpartcv_h11r, function(x) }\KeywordTok{getMean}\NormalTok{(x$cp)), }\KeywordTok{getMean}\NormalTok{(rpartcv_h11$cp), }
+        \KeywordTok{getMean}\NormalTok{(rpartcv_h11fram$cp), }\KeywordTok{sapply}\NormalTok{(rpartcv_h04r, function(x) }\KeywordTok{getMean}\NormalTok{(x$cp)), }
+        \KeywordTok{getMean}\NormalTok{(rpartcv_h04$cp), }\KeywordTok{getMean}\NormalTok{(rpartcv_h04fram$cp), }\KeywordTok{sapply}\NormalTok{(rpartcv_h0411r, }
+            \NormalTok{function(x) }\KeywordTok{getMean}\NormalTok{(x$cp)), }\KeywordTok{getMean}\NormalTok{(rpartcv_h0411$cp), }\KeywordTok{getMean}\NormalTok{(rpartcv_h0411fram$cp), }
+        \KeywordTok{sapply}\NormalTok{(rpartcv_d11r, function(x) }\KeywordTok{getMean}\NormalTok{(x$cp)), }\KeywordTok{getMean}\NormalTok{(rpartcv_d11$cp), }
+        \KeywordTok{getMean}\NormalTok{(rpartcv_d11fram$cp), }\KeywordTok{sapply}\NormalTok{(rpartcv_d04r, function(x) }\KeywordTok{getMean}\NormalTok{(x$cp)), }
+        \KeywordTok{getMean}\NormalTok{(rpartcv_d04$cp), }\KeywordTok{getMean}\NormalTok{(rpartcv_d04fram$cp), }\KeywordTok{sapply}\NormalTok{(rpartcv_d0411r, }
+            \NormalTok{function(x) }\KeywordTok{getMean}\NormalTok{(x$cp)), }\KeywordTok{getMean}\NormalTok{(rpartcv_d0411$cp), }\KeywordTok{getMean}\NormalTok{(rpartcv_d0411fram$cp)), }
+    \DataTypeTok{min =} \KeywordTok{c}\NormalTok{(}\KeywordTok{sapply}\NormalTok{(rpartcv_h11r, function(x) }\KeywordTok{getMin}\NormalTok{(x$cp)), }\KeywordTok{getMin}\NormalTok{(rpartcv_h11$cp), }
+        \KeywordTok{getMin}\NormalTok{(rpartcv_h11fram$cp), }\KeywordTok{sapply}\NormalTok{(rpartcv_h04r, function(x) }\KeywordTok{getMin}\NormalTok{(x$cp)), }
+        \KeywordTok{getMin}\NormalTok{(rpartcv_h04$cp), }\KeywordTok{getMin}\NormalTok{(rpartcv_h04fram$cp), }\KeywordTok{sapply}\NormalTok{(rpartcv_h0411r, }
+            \NormalTok{function(x) }\KeywordTok{getMin}\NormalTok{(x$cp)), }\KeywordTok{getMin}\NormalTok{(rpartcv_h0411$cp), }\KeywordTok{getMin}\NormalTok{(rpartcv_h0411fram$cp), }
+        \KeywordTok{sapply}\NormalTok{(rpartcv_d11r, function(x) }\KeywordTok{getMin}\NormalTok{(x$cp)), }\KeywordTok{getMin}\NormalTok{(rpartcv_d11$cp), }
+        \KeywordTok{getMin}\NormalTok{(rpartcv_d11fram$cp), }\KeywordTok{sapply}\NormalTok{(rpartcv_d04r, function(x) }\KeywordTok{getMin}\NormalTok{(x$cp)), }
+        \KeywordTok{getMin}\NormalTok{(rpartcv_d04$cp), }\KeywordTok{getMin}\NormalTok{(rpartcv_d04fram$cp), }\KeywordTok{sapply}\NormalTok{(rpartcv_d0411r, }
+            \NormalTok{function(x) }\KeywordTok{getMin}\NormalTok{(x$cp)), }\KeywordTok{getMin}\NormalTok{(rpartcv_d0411$cp), }\KeywordTok{getMin}\NormalTok{(rpartcv_d0411fram$cp)), }
+    \DataTypeTok{max =} \KeywordTok{c}\NormalTok{(}\KeywordTok{sapply}\NormalTok{(rpartcv_h11r, function(x) }\KeywordTok{getMax}\NormalTok{(x$cp)), }\KeywordTok{getMax}\NormalTok{(rpartcv_h11$cp), }
+        \KeywordTok{getMax}\NormalTok{(rpartcv_h11fram$cp), }\KeywordTok{sapply}\NormalTok{(rpartcv_h04r, function(x) }\KeywordTok{getMax}\NormalTok{(x$cp)), }
+        \KeywordTok{getMax}\NormalTok{(rpartcv_h04$cp), }\KeywordTok{getMax}\NormalTok{(rpartcv_h04fram$cp), }\KeywordTok{sapply}\NormalTok{(rpartcv_h0411r, }
+            \NormalTok{function(x) }\KeywordTok{getMax}\NormalTok{(x$cp)), }\KeywordTok{getMax}\NormalTok{(rpartcv_h0411$cp), }\KeywordTok{getMax}\NormalTok{(rpartcv_h0411fram$cp), }
+        \KeywordTok{sapply}\NormalTok{(rpartcv_d11r, function(x) }\KeywordTok{getMax}\NormalTok{(x$cp)), }\KeywordTok{getMax}\NormalTok{(rpartcv_d11$cp), }
+        \KeywordTok{getMax}\NormalTok{(rpartcv_d11fram$cp), }\KeywordTok{sapply}\NormalTok{(rpartcv_d04r, function(x) }\KeywordTok{getMax}\NormalTok{(x$cp)), }
+        \KeywordTok{getMax}\NormalTok{(rpartcv_d04$cp), }\KeywordTok{getMax}\NormalTok{(rpartcv_d04fram$cp), }\KeywordTok{sapply}\NormalTok{(rpartcv_d0411r, }
+            \NormalTok{function(x) }\KeywordTok{getMax}\NormalTok{(x$cp)), }\KeywordTok{getMax}\NormalTok{(rpartcv_d0411$cp), }\KeywordTok{getMax}\NormalTok{(rpartcv_d0411fram$cp)))}
+
+\NormalTok{rpartcv_dev <-}\StringTok{ }\KeywordTok{data.frame}\NormalTok{(}\DataTypeTok{resp =} \KeywordTok{factor}\NormalTok{(}\KeywordTok{rep}\NormalTok{(}\KeywordTok{c}\NormalTok{(}\StringTok{"HAC 2011"}\NormalTok{, }\StringTok{"HAC 2004"}\NormalTok{, }\StringTok{"HAC 2004-2011"}\NormalTok{, }
+    \StringTok{"doc 2011"}\NormalTok{, }\StringTok{"doc 2004"}\NormalTok{, }\StringTok{"doc 2004-2011"}\NormalTok{), }\DataTypeTok{each =} \DecValTok{12}\NormalTok{), }\DataTypeTok{levels =} \KeywordTok{c}\NormalTok{(}\StringTok{"HAC 2011"}\NormalTok{, }
+    \StringTok{"HAC 2004"}\NormalTok{, }\StringTok{"HAC 2004-2011"}\NormalTok{, }\StringTok{"doc 2011"}\NormalTok{, }\StringTok{"doc 2004"}\NormalTok{, }\StringTok{"doc 2004-2011"}\NormalTok{)), }
+    \DataTypeTok{Variables =} \KeywordTok{factor}\NormalTok{(}\KeywordTok{rep}\NormalTok{(}\KeywordTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{:}\DecValTok{10}\NormalTok{, }\DecValTok{304}\NormalTok{, }\StringTok{"Fram"}\NormalTok{), }\DecValTok{6}\NormalTok{), }\DataTypeTok{levels =} \KeywordTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{:}\DecValTok{10}\NormalTok{, }\DecValTok{304}\NormalTok{, }\StringTok{"Fram"}\NormalTok{)), }
+    \DataTypeTok{AUC =} \KeywordTok{c}\NormalTok{(}\KeywordTok{sapply}\NormalTok{(rpartcv_h11r, function(x) }\KeywordTok{getMean}\NormalTok{(x$dev)), }\KeywordTok{getMean}\NormalTok{(rpartcv_h11$dev), }
+        \KeywordTok{getMean}\NormalTok{(rpartcv_h11fram$dev), }\KeywordTok{sapply}\NormalTok{(rpartcv_h04r, function(x) }\KeywordTok{getMean}\NormalTok{(x$dev)), }
+        \KeywordTok{getMean}\NormalTok{(rpartcv_h04$dev), }\KeywordTok{getMean}\NormalTok{(rpartcv_h04fram$dev), }\KeywordTok{sapply}\NormalTok{(rpartcv_h0411r, }
+            \NormalTok{function(x) }\KeywordTok{getMean}\NormalTok{(x$dev)), }\KeywordTok{getMean}\NormalTok{(rpartcv_h0411$dev), }\KeywordTok{getMean}\NormalTok{(rpartcv_h0411fram$dev), }
+        \KeywordTok{sapply}\NormalTok{(rpartcv_d11r, function(x) }\KeywordTok{getMean}\NormalTok{(x$dev)), }\KeywordTok{getMean}\NormalTok{(rpartcv_d11$dev), }
+        \KeywordTok{getMean}\NormalTok{(rpartcv_d11fram$dev), }\KeywordTok{sapply}\NormalTok{(rpartcv_d04r, function(x) }\KeywordTok{getMean}\NormalTok{(x$dev)), }
+        \KeywordTok{getMean}\NormalTok{(rpartcv_d04$dev), }\KeywordTok{getMean}\NormalTok{(rpartcv_d04fram$dev), }\KeywordTok{sapply}\NormalTok{(rpartcv_d0411r, }
+            \NormalTok{function(x) }\KeywordTok{getMean}\NormalTok{(x$dev)), }\KeywordTok{getMean}\NormalTok{(rpartcv_d0411$dev), }\KeywordTok{getMean}\NormalTok{(rpartcv_d0411fram$dev)), }
+    \DataTypeTok{min =} \KeywordTok{c}\NormalTok{(}\KeywordTok{sapply}\NormalTok{(rpartcv_h11r, function(x) }\KeywordTok{getMin}\NormalTok{(x$dev)), }\KeywordTok{getMin}\NormalTok{(rpartcv_h11$dev), }
+        \KeywordTok{getMin}\NormalTok{(rpartcv_h11fram$dev), }\KeywordTok{sapply}\NormalTok{(rpartcv_h04r, function(x) }\KeywordTok{getMin}\NormalTok{(x$dev)), }
+        \KeywordTok{getMin}\NormalTok{(rpartcv_h04$dev), }\KeywordTok{getMin}\NormalTok{(rpartcv_h04fram$dev), }\KeywordTok{sapply}\NormalTok{(rpartcv_h0411r, }
+            \NormalTok{function(x) }\KeywordTok{getMin}\NormalTok{(x$dev)), }\KeywordTok{getMin}\NormalTok{(rpartcv_h0411$dev), }\KeywordTok{getMin}\NormalTok{(rpartcv_h0411fram$dev), }
+        \KeywordTok{sapply}\NormalTok{(rpartcv_d11r, function(x) }\KeywordTok{getMin}\NormalTok{(x$dev)), }\KeywordTok{getMin}\NormalTok{(rpartcv_d11$dev), }
+        \KeywordTok{getMin}\NormalTok{(rpartcv_d11fram$dev), }\KeywordTok{sapply}\NormalTok{(rpartcv_d04r, function(x) }\KeywordTok{getMin}\NormalTok{(x$dev)), }
+        \KeywordTok{getMin}\NormalTok{(rpartcv_d04$dev), }\KeywordTok{getMin}\NormalTok{(rpartcv_d04fram$dev), }\KeywordTok{sapply}\NormalTok{(rpartcv_d0411r, }
+            \NormalTok{function(x) }\KeywordTok{getMin}\NormalTok{(x$dev)), }\KeywordTok{getMin}\NormalTok{(rpartcv_d0411$dev), }\KeywordTok{getMin}\NormalTok{(rpartcv_d0411fram$dev)), }
+    \DataTypeTok{max =} \KeywordTok{c}\NormalTok{(}\KeywordTok{sapply}\NormalTok{(rpartcv_h11r, function(x) }\KeywordTok{getMax}\NormalTok{(x$dev)), }\KeywordTok{getMax}\NormalTok{(rpartcv_h11$dev), }
+        \KeywordTok{getMax}\NormalTok{(rpartcv_h11fram$dev), }\KeywordTok{sapply}\NormalTok{(rpartcv_h04r, function(x) }\KeywordTok{getMax}\NormalTok{(x$dev)), }
+        \KeywordTok{getMax}\NormalTok{(rpartcv_h04$dev), }\KeywordTok{getMax}\NormalTok{(rpartcv_h04fram$dev), }\KeywordTok{sapply}\NormalTok{(rpartcv_h0411r, }
+            \NormalTok{function(x) }\KeywordTok{getMax}\NormalTok{(x$dev)), }\KeywordTok{getMax}\NormalTok{(rpartcv_h0411$dev), }\KeywordTok{getMax}\NormalTok{(rpartcv_h0411fram$dev), }
+        \KeywordTok{sapply}\NormalTok{(rpartcv_d11r, function(x) }\KeywordTok{getMax}\NormalTok{(x$dev)), }\KeywordTok{getMax}\NormalTok{(rpartcv_d11$dev), }
+        \KeywordTok{getMax}\NormalTok{(rpartcv_d11fram$dev), }\KeywordTok{sapply}\NormalTok{(rpartcv_d04r, function(x) }\KeywordTok{getMax}\NormalTok{(x$dev)), }
+        \KeywordTok{getMax}\NormalTok{(rpartcv_d04$dev), }\KeywordTok{getMax}\NormalTok{(rpartcv_d04fram$dev), }\KeywordTok{sapply}\NormalTok{(rpartcv_d0411r, }
+            \NormalTok{function(x) }\KeywordTok{getMax}\NormalTok{(x$dev)), }\KeywordTok{getMax}\NormalTok{(rpartcv_d0411$dev), }\KeywordTok{getMax}\NormalTok{(rpartcv_d0411fram$dev)))}
+
+\NormalTok{rpartcv_minsplit <-}\StringTok{ }\KeywordTok{data.frame}\NormalTok{(}\DataTypeTok{resp =} \KeywordTok{factor}\NormalTok{(}\KeywordTok{rep}\NormalTok{(}\KeywordTok{c}\NormalTok{(}\StringTok{"HAC 2011"}\NormalTok{, }\StringTok{"HAC 2004"}\NormalTok{, }\StringTok{"HAC 2004-2011"}\NormalTok{, }
+    \StringTok{"doc 2011"}\NormalTok{, }\StringTok{"doc 2004"}\NormalTok{, }\StringTok{"doc 2004-2011"}\NormalTok{), }\DataTypeTok{each =} \DecValTok{12}\NormalTok{), }\DataTypeTok{levels =} \KeywordTok{c}\NormalTok{(}\StringTok{"HAC 2011"}\NormalTok{, }
+    \StringTok{"HAC 2004"}\NormalTok{, }\StringTok{"HAC 2004-2011"}\NormalTok{, }\StringTok{"doc 2011"}\NormalTok{, }\StringTok{"doc 2004"}\NormalTok{, }\StringTok{"doc 2004-2011"}\NormalTok{)), }
+    \DataTypeTok{Variables =} \KeywordTok{factor}\NormalTok{(}\KeywordTok{rep}\NormalTok{(}\KeywordTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{:}\DecValTok{10}\NormalTok{, }\DecValTok{304}\NormalTok{, }\StringTok{"Fram"}\NormalTok{), }\DecValTok{6}\NormalTok{), }\DataTypeTok{levels =} \KeywordTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{:}\DecValTok{10}\NormalTok{, }\DecValTok{304}\NormalTok{, }\StringTok{"Fram"}\NormalTok{)), }
+    \DataTypeTok{AUC =} \KeywordTok{c}\NormalTok{(}\KeywordTok{sapply}\NormalTok{(rpartcv_h11r, function(x) }\KeywordTok{getMean}\NormalTok{(x$minsplit)), }\KeywordTok{getMean}\NormalTok{(rpartcv_h11$minsplit), }
+        \KeywordTok{getMean}\NormalTok{(rpartcv_h11fram$minsplit), }\KeywordTok{sapply}\NormalTok{(rpartcv_h04r, function(x) }\KeywordTok{getMean}\NormalTok{(x$minsplit)), }
+        \KeywordTok{getMean}\NormalTok{(rpartcv_h04$minsplit), }\KeywordTok{getMean}\NormalTok{(rpartcv_h04fram$minsplit), }\KeywordTok{sapply}\NormalTok{(rpartcv_h0411r, }
+            \NormalTok{function(x) }\KeywordTok{getMean}\NormalTok{(x$minsplit)), }\KeywordTok{getMean}\NormalTok{(rpartcv_h0411$minsplit), }
+        \KeywordTok{getMean}\NormalTok{(rpartcv_h0411fram$minsplit), }\KeywordTok{sapply}\NormalTok{(rpartcv_d11r, function(x) }\KeywordTok{getMean}\NormalTok{(x$minsplit)), }
+        \KeywordTok{getMean}\NormalTok{(rpartcv_d11$minsplit), }\KeywordTok{getMean}\NormalTok{(rpartcv_d11fram$minsplit), }\KeywordTok{sapply}\NormalTok{(rpartcv_d04r, }
+            \NormalTok{function(x) }\KeywordTok{getMean}\NormalTok{(x$minsplit)), }\KeywordTok{getMean}\NormalTok{(rpartcv_d04$minsplit), }
+        \KeywordTok{getMean}\NormalTok{(rpartcv_d04fram$minsplit), }\KeywordTok{sapply}\NormalTok{(rpartcv_d0411r, function(x) }\KeywordTok{getMean}\NormalTok{(x$minsplit)), }
+        \KeywordTok{getMean}\NormalTok{(rpartcv_d0411$minsplit), }\KeywordTok{getMean}\NormalTok{(rpartcv_d0411fram$minsplit)), }
+    \DataTypeTok{min =} \KeywordTok{c}\NormalTok{(}\KeywordTok{sapply}\NormalTok{(rpartcv_h11r, function(x) }\KeywordTok{getMin}\NormalTok{(x$minsplit)), }\KeywordTok{getMin}\NormalTok{(rpartcv_h11$minsplit), }
+        \KeywordTok{getMin}\NormalTok{(rpartcv_h11fram$minsplit), }\KeywordTok{sapply}\NormalTok{(rpartcv_h04r, function(x) }\KeywordTok{getMin}\NormalTok{(x$minsplit)), }
+        \KeywordTok{getMin}\NormalTok{(rpartcv_h04$minsplit), }\KeywordTok{getMin}\NormalTok{(rpartcv_h04fram$minsplit), }\KeywordTok{sapply}\NormalTok{(rpartcv_h0411r, }
+            \NormalTok{function(x) }\KeywordTok{getMin}\NormalTok{(x$minsplit)), }\KeywordTok{getMin}\NormalTok{(rpartcv_h0411$minsplit), }
+        \KeywordTok{getMin}\NormalTok{(rpartcv_h0411fram$minsplit), }\KeywordTok{sapply}\NormalTok{(rpartcv_d11r, function(x) }\KeywordTok{getMin}\NormalTok{(x$minsplit)), }
+        \KeywordTok{getMin}\NormalTok{(rpartcv_d11$minsplit), }\KeywordTok{getMin}\NormalTok{(rpartcv_d11fram$minsplit), }\KeywordTok{sapply}\NormalTok{(rpartcv_d04r, }
+            \NormalTok{function(x) }\KeywordTok{getMin}\NormalTok{(x$minsplit)), }\KeywordTok{getMin}\NormalTok{(rpartcv_d04$minsplit), }\KeywordTok{getMin}\NormalTok{(rpartcv_d04fram$minsplit), }
+        \KeywordTok{sapply}\NormalTok{(rpartcv_d0411r, function(x) }\KeywordTok{getMin}\NormalTok{(x$minsplit)), }\KeywordTok{getMin}\NormalTok{(rpartcv_d0411$minsplit), }
+        \KeywordTok{getMin}\NormalTok{(rpartcv_d0411fram$minsplit)), }\DataTypeTok{max =} \KeywordTok{c}\NormalTok{(}\KeywordTok{sapply}\NormalTok{(rpartcv_h11r, function(x) }\KeywordTok{getMax}\NormalTok{(x$minsplit)), }
+        \KeywordTok{getMax}\NormalTok{(rpartcv_h11$minsplit), }\KeywordTok{getMax}\NormalTok{(rpartcv_h11fram$minsplit), }\KeywordTok{sapply}\NormalTok{(rpartcv_h04r, }
+            \NormalTok{function(x) }\KeywordTok{getMax}\NormalTok{(x$minsplit)), }\KeywordTok{getMax}\NormalTok{(rpartcv_h04$minsplit), }\KeywordTok{getMax}\NormalTok{(rpartcv_h04fram$minsplit), }
+        \KeywordTok{sapply}\NormalTok{(rpartcv_h0411r, function(x) }\KeywordTok{getMax}\NormalTok{(x$minsplit)), }\KeywordTok{getMax}\NormalTok{(rpartcv_h0411$minsplit), }
+        \KeywordTok{getMax}\NormalTok{(rpartcv_h0411fram$minsplit), }\KeywordTok{sapply}\NormalTok{(rpartcv_d11r, function(x) }\KeywordTok{getMax}\NormalTok{(x$minsplit)), }
+        \KeywordTok{getMax}\NormalTok{(rpartcv_d11$minsplit), }\KeywordTok{getMax}\NormalTok{(rpartcv_d11fram$minsplit), }\KeywordTok{sapply}\NormalTok{(rpartcv_d04r, }
+            \NormalTok{function(x) }\KeywordTok{getMax}\NormalTok{(x$minsplit)), }\KeywordTok{getMax}\NormalTok{(rpartcv_d04$minsplit), }\KeywordTok{getMax}\NormalTok{(rpartcv_d04fram$minsplit), }
+        \KeywordTok{sapply}\NormalTok{(rpartcv_d0411r, function(x) }\KeywordTok{getMax}\NormalTok{(x$minsplit)), }\KeywordTok{getMax}\NormalTok{(rpartcv_d0411$minsplit), }
+        \KeywordTok{getMax}\NormalTok{(rpartcv_d0411fram$minsplit)))}
+
+\CommentTok{# pdf('/mnt/DATA/Main/Spring 2015/998/Proj2/plots/rpartcv_cp.pdf')}
+\CommentTok{# ggplot(rpartcv_cp, aes(y=AUC, x=Variables)) + geom_point(size=3) +}
+\CommentTok{# geom_errorbar(aes(y=AUC, ymin=min, ymax=max)) + facet_wrap(~resp) +}
+\CommentTok{# theme(strip.text=element_text(size=18), axis.text=element_text(angle=90,}
+\CommentTok{# color='black', size=12), axis.title=element_text(size=12)) + ylim(.4,.85)}
+\CommentTok{# dev.off() pdf('/mnt/DATA/Main/Spring}
+\CommentTok{# 2015/998/Proj2/plots/rpartcv_dev.pdf') ggplot(rpartcv_dev, aes(y=AUC,}
+\CommentTok{# x=Variables)) + geom_point(size=3) + geom_errorbar(aes(y=AUC, ymin=min,}
+\CommentTok{# ymax=max)) + facet_wrap(~resp) + theme(strip.text=element_text(size=18),}
+\CommentTok{# axis.text=element_text(angle=90, color='black', size=12),}
+\CommentTok{# axis.title=element_text(size=12)) + ylim(.4,.85) dev.off()}
+\CommentTok{# pdf('/mnt/DATA/Main/Spring 2015/998/Proj2/plots/rpartcv_minsplit.pdf')}
+\CommentTok{# ggplot(rpartcv_minsplit, aes(y=AUC, x=Variables)) + geom_point(size=3) +}
+\CommentTok{# geom_errorbar(aes(y=AUC, ymin=min, ymax=max)) + facet_wrap(~resp) +}
+\CommentTok{# theme(strip.text=element_text(size=18), axis.text=element_text(angle=90,}
+\CommentTok{# color='black', size=12), axis.title=element_text(size=12)) + ylim(.4,.85)}
+\CommentTok{# dev.off()}
+
+\NormalTok{## fit rpart with framington variables using deviance pruning}
+\NormalTok{## set.seed(142111) rpartprune_h11fram <- rpartPruneCV(x[,framvar11], h11,}
+\NormalTok{## folds_h11) rpartprune_h04fram <- rpartPruneCV(x[,framvar04], h04,}
+\NormalTok{## folds_h04) rpartprune_h0411fram <- rpartPruneCV(x[,framvar04], h0411,}
+\NormalTok{## folds_h0411) rpartprune_d11fram <- rpartPruneCV(x[,framvar11], d11,}
+\NormalTok{## folds_d11) rpartprune_d04fram <- rpartPruneCV(x[,framvar04], d04,}
+\NormalTok{## folds_d04) rpartprune_d0411fram <- rpartPruneCV(x[,framvar04], d0411,}
+\NormalTok{## folds_d0411) rpart_h11fram <- rpart(h11~., data=x[,framvar11],}
+\NormalTok{## method='class', control=rpart.control(maxsurrogate=100, cp=-1))}
+\NormalTok{## rpart_h04fram <- rpart(h04~., data=x[,framvar04], method='class',}
+\NormalTok{## control=rpart.control(maxsurrogate=100, cp=-1)) rpart_h0411fram <-}
+\NormalTok{## rpart(h11~., data=x[,framvar04], method='class',}
+\NormalTok{## control=rpart.control(maxsurrogate=100, cp=-1)) rpart_d11fram <-}
+\NormalTok{## rpart(d11~., data=x[,framvar11], method='class',}
+\NormalTok{## control=rpart.control(maxsurrogate=100, cp=-1)) rpart_d04fram <-}
+\NormalTok{## rpart(h11~., data=x[,framvar04], method='class',}
+\NormalTok{## control=rpart.control(maxsurrogate=100, cp=-1)) rpart_d0411fram <-}
+\NormalTok{## rpart(h11~., data=x[,framvar04], method='class',}
+\NormalTok{## control=rpart.control(maxsurrogate=100, cp=-1)) save(rpartprune_h11fram,}
+\NormalTok{## rpartprune_h04fram, rpartprune_h0411fram, rpartprune_d11fram,}
+\NormalTok{## rpartprune_d04fram, rpartprune_d0411fram, rpart_h11fram, rpart_h04fram,}
+\NormalTok{## rpart_h0411fram, rpart_d11fram, rpart_d04fram, rpart_d0411fram,}
+\NormalTok{## file='/mnt/DATA/Main/Spring 2015/998/Proj2/models/rpart_fram.rda')}
+\KeywordTok{load}\NormalTok{(}\StringTok{"/mnt/DATA/Main/Spring 2015/998/Proj2/models/rpart_fram.rda"}\NormalTok{)}
+
+\NormalTok{dev_h11fram <-}\StringTok{ }\KeywordTok{getPruneValBest}\NormalTok{(rpartprune_h11fram, }\StringTok{"auc"}\NormalTok{, }\StringTok{"dev"}\NormalTok{)}
+\NormalTok{dev_h04fram <-}\StringTok{ }\KeywordTok{getPruneValBest}\NormalTok{(rpartprune_h04fram, }\StringTok{"auc"}\NormalTok{, }\StringTok{"dev"}\NormalTok{)}
+\NormalTok{dev_h0411fram <-}\StringTok{ }\KeywordTok{getPruneValBest}\NormalTok{(rpartprune_h0411fram, }\StringTok{"auc"}\NormalTok{, }\StringTok{"dev"}\NormalTok{)}
+\NormalTok{dev_d11fram <-}\StringTok{ }\KeywordTok{getPruneValBest}\NormalTok{(rpartprune_d11fram, }\StringTok{"auc"}\NormalTok{, }\StringTok{"dev"}\NormalTok{)}
+\NormalTok{dev_d04fram <-}\StringTok{ }\KeywordTok{getPruneValBest}\NormalTok{(rpartprune_d04fram, }\StringTok{"auc"}\NormalTok{, }\StringTok{"dev"}\NormalTok{)}
+\NormalTok{dev_d0411fram <-}\StringTok{ }\KeywordTok{getPruneValBest}\NormalTok{(rpartprune_d0411fram, }\StringTok{"auc"}\NormalTok{, }\StringTok{"dev"}\NormalTok{)}
+\NormalTok{minsplit_h11fram <-}\StringTok{ }\KeywordTok{getPruneValBest}\NormalTok{(rpartprune_h11fram, }\StringTok{"auc"}\NormalTok{, }\StringTok{"minsplit"}\NormalTok{)}
+\NormalTok{minsplit_h04fram <-}\StringTok{ }\KeywordTok{getPruneValBest}\NormalTok{(rpartprune_h04fram, }\StringTok{"auc"}\NormalTok{, }\StringTok{"minsplit"}\NormalTok{)}
+\NormalTok{minsplit_h0411fram <-}\StringTok{ }\KeywordTok{getPruneValBest}\NormalTok{(rpartprune_h0411fram, }\StringTok{"auc"}\NormalTok{, }\StringTok{"minsplit"}\NormalTok{)}
+\NormalTok{minsplit_d11fram <-}\StringTok{ }\KeywordTok{getPruneValBest}\NormalTok{(rpartprune_d11fram, }\StringTok{"auc"}\NormalTok{, }\StringTok{"minsplit"}\NormalTok{)}
+\NormalTok{minsplit_d04fram <-}\StringTok{ }\KeywordTok{getPruneValBest}\NormalTok{(rpartprune_d04fram, }\StringTok{"auc"}\NormalTok{, }\StringTok{"minsplit"}\NormalTok{)}
+\NormalTok{minsplit_d0411fram <-}\StringTok{ }\KeywordTok{getPruneValBest}\NormalTok{(rpartprune_d0411fram, }\StringTok{"auc"}\NormalTok{, }\StringTok{"minsplit"}\NormalTok{)}
+
+\NormalTok{plotdir <-}\StringTok{ "/mnt/DATA/Main/Spring 2015/998/Proj2/plots/"}
+
+\KeywordTok{pdf}\NormalTok{(}\KeywordTok{paste0}\NormalTok{(plotdir, }\StringTok{"dev_h11fram.pdf"}\NormalTok{))}
+\KeywordTok{prp}\NormalTok{(}\KeywordTok{myprune.rpart}\NormalTok{(rpart_h11fram, }\StringTok{"dev"}\NormalTok{, dev_h11fram), }\DataTypeTok{type =} \DecValTok{4}\NormalTok{, }\DataTypeTok{extra =} \DecValTok{7}\NormalTok{)}
+\KeywordTok{dev.off}\NormalTok{()}
+\KeywordTok{pdf}\NormalTok{(}\KeywordTok{paste0}\NormalTok{(plotdir, }\StringTok{"dev_h04fram.pdf"}\NormalTok{))}
+\KeywordTok{prp}\NormalTok{(}\KeywordTok{myprune.rpart}\NormalTok{(rpart_h04fram, }\StringTok{"dev"}\NormalTok{, dev_h04fram), }\DataTypeTok{type =} \DecValTok{4}\NormalTok{, }\DataTypeTok{extra =} \DecValTok{7}\NormalTok{)}
+\KeywordTok{dev.off}\NormalTok{()}
+\KeywordTok{pdf}\NormalTok{(}\KeywordTok{paste0}\NormalTok{(plotdir, }\StringTok{"dev_h0411fram.pdf"}\NormalTok{))}
+\KeywordTok{prp}\NormalTok{(}\KeywordTok{myprune.rpart}\NormalTok{(rpart_h0411fram, }\StringTok{"dev"}\NormalTok{, dev_h0411fram), }\DataTypeTok{type =} \DecValTok{4}\NormalTok{, }\DataTypeTok{extra =} \DecValTok{7}\NormalTok{)}
+\KeywordTok{dev.off}\NormalTok{()}
+\KeywordTok{pdf}\NormalTok{(}\KeywordTok{paste0}\NormalTok{(plotdir, }\StringTok{"dev_d11fram.pdf"}\NormalTok{))}
+\KeywordTok{prp}\NormalTok{(}\KeywordTok{myprune.rpart}\NormalTok{(rpart_d11fram, }\StringTok{"dev"}\NormalTok{, dev_d11fram), }\DataTypeTok{type =} \DecValTok{4}\NormalTok{, }\DataTypeTok{extra =} \DecValTok{7}\NormalTok{)}
+\KeywordTok{dev.off}\NormalTok{()}
+\KeywordTok{pdf}\NormalTok{(}\KeywordTok{paste0}\NormalTok{(plotdir, }\StringTok{"dev_d04fram.pdf"}\NormalTok{))}
+\KeywordTok{prp}\NormalTok{(}\KeywordTok{myprune.rpart}\NormalTok{(rpart_d04fram, }\StringTok{"dev"}\NormalTok{, dev_d04fram), }\DataTypeTok{type =} \DecValTok{4}\NormalTok{, }\DataTypeTok{extra =} \DecValTok{7}\NormalTok{)}
+\KeywordTok{dev.off}\NormalTok{()}
+\KeywordTok{pdf}\NormalTok{(}\KeywordTok{paste0}\NormalTok{(plotdir, }\StringTok{"dev_d0411fram.pdf"}\NormalTok{))}
+\KeywordTok{prp}\NormalTok{(}\KeywordTok{myprune.rpart}\NormalTok{(rpart_d0411fram, }\StringTok{"dev"}\NormalTok{, dev_d0411fram), }\DataTypeTok{type =} \DecValTok{4}\NormalTok{, }\DataTypeTok{extra =} \DecValTok{7}\NormalTok{)}
+\KeywordTok{dev.off}\NormalTok{()}
+
+\KeywordTok{pdf}\NormalTok{(}\KeywordTok{paste0}\NormalTok{(plotdir, }\StringTok{"minsplit_h11fram.pdf"}\NormalTok{))}
+\KeywordTok{prp}\NormalTok{(}\KeywordTok{myprune.rpart}\NormalTok{(rpart_h11fram, }\StringTok{"minsplit"}\NormalTok{, minsplit_h11fram), }\DataTypeTok{type =} \DecValTok{4}\NormalTok{, }\DataTypeTok{extra =} \DecValTok{7}\NormalTok{)}
+\KeywordTok{dev.off}\NormalTok{()}
+\KeywordTok{pdf}\NormalTok{(}\KeywordTok{paste0}\NormalTok{(plotdir, }\StringTok{"minsplit_h04fram.pdf"}\NormalTok{))}
+\KeywordTok{prp}\NormalTok{(}\KeywordTok{myprune.rpart}\NormalTok{(rpart_h04fram, }\StringTok{"minsplit"}\NormalTok{, minsplit_h04fram), }\DataTypeTok{type =} \DecValTok{4}\NormalTok{, }\DataTypeTok{extra =} \DecValTok{7}\NormalTok{)}
+\KeywordTok{dev.off}\NormalTok{()}
+\KeywordTok{pdf}\NormalTok{(}\KeywordTok{paste0}\NormalTok{(plotdir, }\StringTok{"minsplit_h0411fram.pdf"}\NormalTok{))}
+\KeywordTok{prp}\NormalTok{(}\KeywordTok{myprune.rpart}\NormalTok{(rpart_h0411fram, }\StringTok{"minsplit"}\NormalTok{, minsplit_h0411fram), }\DataTypeTok{type =} \DecValTok{4}\NormalTok{, }
+    \DataTypeTok{extra =} \DecValTok{7}\NormalTok{)}
+\KeywordTok{dev.off}\NormalTok{()}
+\KeywordTok{pdf}\NormalTok{(}\KeywordTok{paste0}\NormalTok{(plotdir, }\StringTok{"minsplit_d11fram.pdf"}\NormalTok{))}
+\KeywordTok{prp}\NormalTok{(}\KeywordTok{myprune.rpart}\NormalTok{(rpart_d11fram, }\StringTok{"minsplit"}\NormalTok{, minsplit_d11fram), }\DataTypeTok{type =} \DecValTok{4}\NormalTok{, }\DataTypeTok{extra =} \DecValTok{7}\NormalTok{)}
+\KeywordTok{dev.off}\NormalTok{()}
+\KeywordTok{pdf}\NormalTok{(}\KeywordTok{paste0}\NormalTok{(plotdir, }\StringTok{"minsplit_d04fram.pdf"}\NormalTok{))}
+\KeywordTok{prp}\NormalTok{(}\KeywordTok{myprune.rpart}\NormalTok{(rpart_d04fram, }\StringTok{"minsplit"}\NormalTok{, minsplit_d04fram), }\DataTypeTok{type =} \DecValTok{4}\NormalTok{, }\DataTypeTok{extra =} \DecValTok{7}\NormalTok{)}
+\KeywordTok{dev.off}\NormalTok{()}
+\KeywordTok{pdf}\NormalTok{(}\KeywordTok{paste0}\NormalTok{(plotdir, }\StringTok{"minsplit_d0411fram.pdf"}\NormalTok{))}
+\KeywordTok{prp}\NormalTok{(}\KeywordTok{myprune.rpart}\NormalTok{(rpart_d0411fram, }\StringTok{"minsplit"}\NormalTok{, minsplit_d0411fram), }\DataTypeTok{type =} \DecValTok{4}\NormalTok{, }
+    \DataTypeTok{extra =} \DecValTok{7}\NormalTok{)}
+\KeywordTok{dev.off}\NormalTok{()}
+\end{Highlighting}
+\end{Shaded}
 
 \newpage
 

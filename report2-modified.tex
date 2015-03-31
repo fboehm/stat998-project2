@@ -182,8 +182,10 @@ variables are provided in Appendix A.
 \subsubsection{Statistical modeling with Framingham study
 predictors}\label{statistical-modeling-with-framingham-study-predictors}
 
+
 \begin{table}
-\begin{tabular}{l r}\label{tab:fram2wls}
+\begin{tabular}{l r}
+
 Framingham study variable & WLS Variable\\
 \hline
 Sex & Sex\\
@@ -197,12 +199,13 @@ Treated for high blood pressure & None\\
 \hline
 \end{tabular}
 \caption{Framingham study variables and their closest analogs in WLS. (* SBP not available, so we used reported "high BP".)}
+\label{table:fram2wls} % need label after the caption{} line
 \end{table}
 
 We identified those variables in the WLS that closely match those in the
 Framingham study\footnote{D'Agostino et al., ``General Cardiovascular
   Risk Profile for Use in Primary Care the Framingham Heart Study.'' } (
-Table \ref{tab:fram2wls}). It's important to note that the Framingham
+Table \ref{table:fram2wls}). It's important to note that the Framingham
 study used survival analysis methods, including Cox proportional hazards
 regression, to identify risk factors for a cardiovascular event. Thus,
 their study design, analysis, and purpose differ from ours.
