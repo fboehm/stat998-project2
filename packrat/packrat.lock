@@ -47,6 +47,7 @@ Hash: d9cc0a13885961b2d004cf73b0fb68dd
 Package: RcppEigen
 Source: CRAN
 Version: 0.3.2.4.0
+Hash: 0546ac34cec16e846d9f0ef4175d2bb2
 Requires: Rcpp
 
 Package: SparseM
@@ -215,7 +216,7 @@ Hash: 7f88a453d0b52e36ea46d9d33c6dcf90
 Package: lme4
 Source: CRAN
 Version: 1.1-7
-Hash: 4c54c3aedda990d722fee46d2f257cf1
+Hash: 5eec4a5d864d0ed399b4f24b3407d02d
 Requires: Rcpp, RcppEigen, minqa, nloptr
 
 Package: lubridate
@@ -283,6 +284,7 @@ Requires: lme4
 Package: plotrix
 Source: CRAN
 Version: 3.5-11
+Hash: 615f871b3ee3798e318330a5c2323623
 
 Package: plyr
 Source: CRAN
@@ -332,6 +334,10 @@ Source: CRAN
 Version: 4.1.0
 Hash: c3feaf4b9f8559778533f00763fad38f
 Requires: Rcpp, brew, digest, stringr
+
+Package: rpart.plot
+Source: CRAN
+Version: 1.5.2
 
 Package: rstudioapi
 Source: CRAN

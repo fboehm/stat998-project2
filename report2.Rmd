@@ -1,6 +1,6 @@
 ---
 title: Identifying myocardial infarction risk factors in the Wisconsin Longitudinal
-  Survey
+  Survey to aid in intervention program design
 author: "Fred Boehm, Statistics 998"
 date: "March 31, 2015"
 output: 
@@ -88,7 +88,6 @@ We found that HAC2004 had `r sum(!is.na(wls$HAC2004), na.rm=TRUE)` non-missing r
 
 ### Statistical modeling with Framingham study predictors
 
-We identified those variables in the WLS that closely match those in the Framingham study [@d2008general] ( Table \ref{tab:fram2wls}). It's important to note that the Framingham study used survival analysis methods, including Cox proportional hazards regression, to identify risk factors for a cardiovascular event. Thus, their study design, analysis, and purpose differ from ours. 
 
 
 \begin{table}
@@ -96,10 +95,10 @@ We identified those variables in the WLS that closely match those in the Framing
 Framingham study variable & WLS Variable\\
 \hline
 Sex & Sex\\
-Quantitative total cholesterol & highchol2011 or highchol2004\\
+Quantitative total cholesterol & highchol2011, highchol2004\\
 Quantitative HDL cholesterol & None\\
-Smoking & Columns 61 to 87 aim to quantify smoking \\
-Diabetes & diabetes2004, diabetes2011, diabdiag2004, diabdiag2011\\
+Smoking & smokever2011 (Columns 61 to 87 aim to quantify smoking) \\
+Diabetes & diabetes2004, diabetes2011\\
 Age & Age\\
 Systolic BP & highbp2004, highbp2011* \\
 Treated for high blood pressure & None\\
@@ -107,6 +106,11 @@ Treated for high blood pressure & None\\
 \end{tabular}
 \caption{Framingham study variables and their closest analogs in WLS. (* SBP not available, so we used reported "high BP".)}
 \end{table}
+
+We identified those variables in the WLS that closely match those in the Framingham study [@d2008general] ( Table \ref{tab:fram2wls}). It's important to note that the Framingham study used survival analysis methods, including Cox proportional hazards regression, to identify risk factors for a cardiovascular event. Thus, their study design, analysis, and purpose differ from ours. 
+
+
+
 
 Because the risk factors from the Framingham study have strong effect sizes, are easily interpreted, and widely used by both physicians and public health scientists, we decided to perform logistic regression analyses with solely those WLS variables that most closely matched the Framingham variables. We analyzed each of the 6 outcomes of interest. For each outcome variable, we fitted a logistic regression model using the entire data set (omitting those subjects with missing data). We then transformed the fitted logit values to probabilities before plotting a receiver operating characteristic (ROC) curve for each model, in which we use the fitted probabilities to examine the trade-off between specificity and sensitivity. We also calculated the area under the curve (AUC) for each ROC curve [@pROC].
 
@@ -137,27 +141,27 @@ library(pROC)
 plot.roc_wrap <- function(out_df # a dataframe outputted from glm_wrap()
                           )
     {
-    plot.roc(out_df$outcome, out_df$predicted_probability, print.auc=TRUE, ci=TRUE, ci.type = "shape")
+    plot.roc(out_df$outcome, out_df$predicted_probability, print.auc=TRUE, ci=FALSE)
     }
 
 ```
 
 
-```{r plot-hac2011}
+```{r plot-hac2011, fig.cap= "Receiver operating characteristic curve for the logistic regression model with outcome HAC2011 and the six Framingham covariates."}
 plot.roc_wrap(glm_wrap(HAC2011 ~ sex + age + highchol2011 + smokever2011 + diabetes2011 + highbp2011))
 ```
 
 
-```{r plot-doc2011}
+```{r plot-doc2011, fig.show='hide'}
 plot.roc_wrap(glm_wrap(doc2011 ~ sex + age + highchol2011 + smokever2011 + diabetes2011 + highbp2011))
 ```
 
 
-```{r plot-hac2004}
+```{r plot-hac2004, fig.show='hide'}
 plot.roc_wrap(glm_wrap(HAC2004 ~ sex + age + highchol2011 + smokever2011 + diabetes2011 + highbp2011))
 ```
 
-```{r plot-doc2004}
+```{r plot-doc2004, fig.show='hide'}
 plot.roc_wrap(glm_wrap(doc2004 ~ sex + age + highchol2011 + smokever2011 + diabetes2011 + highbp2011))
 
 ```
@@ -170,7 +174,7 @@ wls_fem<- wls[wls$sex == "Female",]
 wls_mal<- wls[wls$sex == "Male",]
 ```
 
-```{r plot-hac2011-males}
+```{r plot-hac2011-males, fig.show='hide'}
 plot.roc_wrap(glm_wrap(HAC2011 ~ age + highchol2011 + smokever2011 + diabetes2011 + highbp2011, data=wls_mal))
 plot.roc_wrap(glm_wrap(doc2011 ~ age + highchol2011 + smokever2011 + diabetes2011 + highbp2011, data=wls_mal))
 plot.roc_wrap(glm_wrap(HAC2004 ~ age + highchol2011 + smokever2011 + diabetes2011 + highbp2011, data=wls_mal))
@@ -179,7 +183,7 @@ plot.roc_wrap(glm_wrap(doc2004 ~ age + highchol2011 + smokever2011 + diabetes201
 ```
 
 
-```{r plot-hac2011-females}
+```{r plot-hac2011-females, fig.show='hide'}
 plot.roc_wrap(glm_wrap(HAC2011 ~ age + highchol2011 + smokever2011 + diabetes2011 + highbp2011, data=wls_fem))
 plot.roc_wrap(glm_wrap(doc2011 ~ age + highchol2011 + smokever2011 + diabetes2011 + highbp2011, data=wls_fem))
 plot.roc_wrap(glm_wrap(HAC2004 ~ age + highchol2011 + smokever2011 + diabetes2011 + highbp2011, data=wls_fem))
@@ -188,7 +192,7 @@ plot.roc_wrap(glm_wrap(doc2004 ~ age + highchol2011 + smokever2011 + diabetes201
 ```
 
 
-```{r subdivide-diabetes2004}
+```{r subdivide-diabetes2004, fig.show='hide'}
 wls_dm04<- wls[wls$diabetes2004 == "Yes",]
 wls_nodm04<- wls[wls$diabetes2004 == "No",]
 plot.roc_wrap(glm_wrap(HAC2011 ~ sex + age + highchol2011 + smokever2011 + highbp2011, data=wls_nodm04))
@@ -213,6 +217,17 @@ glmcv(x=df_in, y=wls$HAC2011)
 
 ## Results
 
+\todo[inline, color = purple]{Show a single ROC plot \& explain what is meant by "AUC"}
+
+### Comparing statistical models with cross-validation and area under the curve (AUC) statistic
+
+In evaluating our statistical models, we used "area under the curve" (AUC) from our receiver operating characteristic (ROC) curves. Each statistical model was evaluated with 5-fold cross-validation. For those unfamiliar with cross-validation, five-fold cross-validation means that we partition the subjects into 5 non-overlapping "folds" of approximately equal size. We then fit 5 models, using 4 of the 5 folds as the "training" set for each fit. For each fit, we then test the model with fold that wasn't used in the corresponding training set. For example, for five-fold CV, we first omit fold #1 and fit the model using folds 2,3,4, and 5 together. We then test the model using fold #1. We then fit a model with folds 1,3,4, and 5 together and test it with fold #2. We continue this procedure until all five possible models are fitted. For each of the five models, we created a received operating characteristic (ROC) curve and evaluated the area under the curve using the pROC R package [@pROC].
+
+A ROC curve is a plot of sensitivity against specificity. We created the ROC curve by varying the threshold cut point for our classifier and seeing how distinct cut points impact our specificity and sensitivity as measured on the test set.
+
+
+
+
 
 
 
@@ -224,14 +239,14 @@ glmcv(x=df_in, y=wls$HAC2011)
 
 ## Future directions
 
-We would like to investigate other tree-based methods, including those developed by Wei-Yin Loh. The absence of R implementations of Loh's algorithms prevented us from including them in our current analysis. We are currently in the process of writing code to implement Loh's algorithms in R, but they are not yet ready for use. 
+We would like to investigate other tree-based methods, including those developed by Wei-Yin Loh's research team. The absence of R implementations of Loh's algorithms prevented us from including them in our current analysis. We have begun the process of writing code to implement Loh's algorithms in R, but they are not yet ready for use. 
 
 \todo[inline]{explain why we want Loh's algorithms. Might mention why they could be useful in this project.}
 
-A major reason for using Loh's algorithms is their unbiasedness [@loh2011classification]
+A major reason for using Loh's algorithms, such as GUIDE, is their unbiasedness [@loh2011classification]. CART, the algorithm that's implemented in the rpart package, has an intrinsic selection bias that favors selection of categorical variables with more discrete values. GUIDE, on the other hand, avoids this selection bias. In the current scenario, because most of our variables are either continuous or binary, we're not selection bias is likely to be a major problem, but we'd still like to compare GUIDE results with those of CART. 
 
 
-Given the relatively low cost of acquiring genomics data, one possible future direction is to acquire genomics data for a subset of study subjects. For example, SNP genotype data from each subject may enable us to further discriminate those subjects that are at high risk for a CAD event. Such knowledge may be translated into the proposed intervention program, for example, by promoting healthy diet and physical activity among those at greatest risk. 
+Given the relatively low cost of acquiring genomics data, one possible future direction is to acquire genomics data for a subset of study subjects. For example, SNP genotype data from each subject may enable us to further discriminate those subjects that are at high risk for a CAD event. In some cases, we may be able to use cheek swabs as sources of DNA, which would enable data collection by mail. Such knowledge of genetic risk factors, when coupled with non-genetic risk factors, may be translated into the proposed intervention program, for example, by promoting healthy diet and physical activity among those at greatest risk. 
 
 
 
@@ -276,6 +291,8 @@ Why do some responses switch from “yes” in 2004 to “no” in 2011—is thi
 \newpage
 
 ## Appendix C: Computing code 
+
+
 
 
 \newpage
